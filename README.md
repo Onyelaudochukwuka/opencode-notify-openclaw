@@ -18,9 +18,8 @@ Notifications are one-way by default. With `enableReplies: true`, replies from t
 
 ## Requirements
 
-Before installing, make sure you have:
+Before using the plugin, make sure you have:
 
-- **Node.js 18+** (or Bun runtime) — [nodejs.org](https://nodejs.org) / [bun.sh](https://bun.sh)
 - **OpenCode** installed and configured — [opencode.ai](https://opencode.ai)
 - **Openclaw CLI** installed and authenticated — [openclaw.com](https://openclaw.com)
 - At least one Openclaw channel configured. Verify with:
@@ -28,20 +27,11 @@ Before installing, make sure you have:
   openclaw message send --dry-run --channel <your-channel> --target <your-target> --message "test"
   ```
   This should exit 0 with no errors before you proceed.
-
 ## Installation
 
-### Step 1 — Install the plugin
+**No manual install needed.** OpenCode automatically installs npm plugins at startup. Just add the package name to your `opencode.json` and run OpenCode.
 
-```bash
-# With npm
-npm install opencode-notify-openclaw
-
-# With bun
-bun add opencode-notify-openclaw
-```
-
-### Step 2 — Add to your opencode.json
+### Step 1 — Add to your opencode.json
 
 Open (or create) `opencode.json` in your project directory and add the plugin to the `plugin` array:
 
@@ -83,11 +73,11 @@ Open (or create) `opencode.json` in your project directory and add the plugin to
 | `debounceMs` | number | | `3000` | Milliseconds to debounce `session.idle` events |
 | `events` | string[] | | all | Subset of events to notify on (omit to receive all) |
 
-### Step 3 — Restart OpenCode
+### Step 2 — Restart OpenCode
 
 Restart OpenCode for the plugin to load. You can verify it loaded without errors by checking OpenCode's log output at startup.
 
-### Step 4 — Verify it's working
+### Step 3 — Verify it's working
 
 Trigger a test notification by leaving your OpenCode session idle for a few seconds. You should receive a message on your configured channel.
 
@@ -95,7 +85,6 @@ You can also test your Openclaw setup independently:
 ```bash
 openclaw message send --channel <your-channel> --target <your-target> --message "opencode-notify-openclaw test 🔔"
 ```
-
 ## Troubleshooting
 
 **`[notify-openclaw] openclaw not found`**

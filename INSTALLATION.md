@@ -9,14 +9,10 @@ If you just want the quick version, see the [README](./README.md). This document
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
-  - [Node.js 18+ or Bun](#nodejs-18-or-bun)
   - [OpenCode](#opencode)
   - [Openclaw CLI](#openclaw-cli)
 - [Installation Methods](#installation-methods)
-  - [npm](#npm)
-  - [Bun](#bun)
   - [Local Development (Building from Source)](#local-development-building-from-source)
-  - [Monorepo Installs](#monorepo-installs)
 - [Configuring opencode.json](#configuring-opencodejson)
   - [Where the File Lives](#where-the-file-lives)
   - [Full Annotated Example](#full-annotated-example)
@@ -43,35 +39,7 @@ If you just want the quick version, see the [README](./README.md). This document
 
 ## Prerequisites
 
-Three things must be working before you install the plugin: a JavaScript runtime, OpenCode itself, and the Openclaw CLI. You also need at least one messaging channel configured in Openclaw.
-
-### Node.js 18+ or Bun
-
-The plugin requires Node.js 18 or later, or the Bun runtime. Either works. Bun is what the project uses internally for builds and tests, so if you don't have a preference, Bun is the path of least resistance.
-
-**Check your Node.js version:**
-
-```bash
-node --version
-```
-
-You need `v18.0.0` or higher. If the command isn't found or shows a version below 18, install Node.js from [nodejs.org](https://nodejs.org). The LTS release is recommended.
-
-**Check your Bun version:**
-
-```bash
-bun --version
-```
-
-Any current Bun release works. If the command isn't found, install Bun:
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-```
-
-Then restart your terminal so the `bun` command is on your PATH.
-
-**Which should you use?** If you already have Node.js 18+, that's fine. If you're starting fresh, Bun is faster for installation and has native TypeScript support. The plugin works with both.
+Two things must be working before you use the plugin: OpenCode itself and the Openclaw CLI. You also need at least one messaging channel configured in Openclaw.
 
 ### OpenCode
 
@@ -143,27 +111,7 @@ This command must exit with code 0 and no errors. If it fails, fix the Openclaw 
 
 ## Installation Methods
 
-### npm
-
-Standard npm install in your project directory:
-
-```bash
-npm install opencode-notify-openclaw
-```
-
-This installs the package locally and adds it to your `package.json` dependencies.
-
-**Peer dependencies:** The plugin declares `@opencode-ai/plugin` as a peer dependency (version `>=1.0.0`). OpenCode provides this at runtime, so you don't need to install it yourself. npm 7+ will warn if the peer dependency isn't satisfied, but this warning is safe to ignore as long as you're running the plugin through OpenCode.
-
-**Global install:** Don't install this globally. OpenCode loads plugins from project-level `node_modules`, not from global packages. A global install won't be found.
-
-### Bun
-
-```bash
-bun add opencode-notify-openclaw
-```
-
-Bun handles peer dependencies more quietly than npm. Same result, faster install.
+OpenCode automatically installs npm plugins at startup using Bun. Packages and their dependencies are cached in `~/.cache/opencode/node_modules/`. You don't need to manually install the plugin with `npm install` or `bun add`.
 
 ### Local Development (Building from Source)
 
@@ -231,33 +179,6 @@ Now your project's `node_modules/opencode-notify-openclaw` points to your local 
 ```
 
 Then run `bun install` in your project.
-
-### Monorepo Installs
-
-If your project lives in a monorepo (Turborepo, Nx, pnpm workspaces, npm workspaces, Bun workspaces), install the plugin in the workspace that has the `opencode.json` file.
-
-**npm workspaces:**
-
-```bash
-npm install opencode-notify-openclaw --workspace=packages/my-app
-```
-
-**pnpm workspaces:**
-
-```bash
-pnpm add opencode-notify-openclaw --filter my-app
-```
-
-**Bun workspaces:**
-
-```bash
-bun add opencode-notify-openclaw --cwd packages/my-app
-```
-
-The important thing: the plugin must be resolvable from the directory where OpenCode runs. If your `opencode.json` is at the monorepo root, install there. If it's inside a specific package, install in that package.
-
-**Hoisting note:** If your monorepo hoists dependencies to the root `node_modules`, the plugin will be available everywhere. This is usually fine. Just make sure `opencode.json` is in the right place (more on that below).
-
 ---
 
 ## Configuring opencode.json
@@ -1054,17 +975,7 @@ This section covers running `opencode-notify-openclaw` in headless or automated 
 
 Every setup step can be performed without user interaction using CLI flags and heredocs.
 
-**1. Install the package:**
-
-```bash
-# npm
-npm install opencode-notify-openclaw
-
-# bun
-bun add opencode-notify-openclaw
-```
-
-**2. Write `opencode.json` non-interactively:**
+**1. Add to opencode.json non-interactively:**
 
 ```bash
 cat > opencode.json << 'EOF'
@@ -1081,7 +992,7 @@ cat > opencode.json << 'EOF'
 EOF
 ```
 
-**3. Set up the bridge poller non-interactively:**
+**2. Set up the bridge poller non-interactively:**
 
 ```bash
 # No clone needed — run directly from GitHub:
@@ -1099,7 +1010,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-n
   --channel discord --target "#my-channel"
 ```
 
-**4. Preview without making changes:**
+**3. Preview without making changes:**
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
