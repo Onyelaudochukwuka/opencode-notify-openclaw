@@ -298,6 +298,16 @@ Code blocks are stripped before checking, so ternary operators like `a ? b : c` 
 - **4000-character limit.** Messages longer than 4000 characters are truncated with a `... [truncated]` suffix.
 - **Heuristic filtering for `message.updated`.** The question detector uses regex patterns, not semantic analysis. Some false positives and negatives are expected.
 
+## Security
+
+Socket.dev flags this package with a **"Network access"** alert. This is expected and intentional.
+
+When `enableReplies` is enabled (the default), the plugin starts a local HTTP server bound strictly to `127.0.0.1` — never `0.0.0.0`, never exposed to the network. Its sole purpose is to receive forwarded replies from the Openclaw bridge poller running on the same machine. The port is chosen randomly by the OS and written to `/tmp/opencode-notify-openclaw-{pid}.port` for the poller to discover.
+
+No data is sent to any external server by this plugin. All outbound communication goes through the `openclaw` CLI, which you install and control separately.
+
+To disable the local server entirely, set `enableReplies: false` in your `opencode.json`.
+
 ## License
 
 MIT
