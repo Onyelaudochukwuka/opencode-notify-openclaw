@@ -1,0 +1,4 @@
+        response: "once" | "always" | "reject";
+    };
+    path: {
+        id: string;
