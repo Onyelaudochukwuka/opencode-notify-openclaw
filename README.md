@@ -124,7 +124,7 @@ session input.
 ### Prerequisites
 
 - Openclaw Gateway must be running and configured with a bidirectional channel
-- The Openclaw `message:received` hook must be set up (see `scripts/setup-hook.sh`)
+- The Openclaw bridge poller must be running (install with one command — see [Openclaw Hook Setup](#openclaw-hook-setup))
 
 ### Configuration
 
@@ -163,21 +163,30 @@ Keywords are case-insensitive. Partial matches are not supported, exact match on
 
 Run `scripts/setup-hook.sh` for step-by-step Openclaw hook setup instructions.
 
+
 ### Openclaw Hook Setup
 
-Add the following to `~/.openclaw/openclaw.json` under the `"hooks"` section:
+Install the bridge poller with a single command:
 
-```json
-"message:received": {
-  "command": "bash",
-  "args": [
-    "-c",
-    "curl -s -X POST \"http://127.0.0.1:$(cat /tmp/opencode-notify-openclaw-*.port)/reply\" -H \"Content-Type: application/json\" -d \"$(printf '{\"text\": \"%s\"}' \"$MESSAGE_TEXT\")\""
-  ]
-}
+```bash
+# If you have the repo cloned:
+bash scripts/setup-hook.sh --channel <channel> --target <target>
+
+# Or run directly from GitHub (no clone needed):
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) --channel <channel> --target <target>
 ```
 
-The bridge server writes its port to `/tmp/opencode-notify-openclaw-{pid}.port` on startup. The hook reads this file dynamically so no manual port configuration is needed.
+Replace `<channel>` and `<target>` with your values, for example:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) --channel telegram --target @yourhandle
+```
+
+The script checks prerequisites, writes a polling script to `~/.openclaw/opencode-bridge-poll.sh`, and starts it in the background. To uninstall:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) --uninstall
+```
 
 ### Limitations
 

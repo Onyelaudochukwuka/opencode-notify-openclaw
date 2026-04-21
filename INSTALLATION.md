@@ -627,34 +627,57 @@ The glob pattern (`*.port`) means it works regardless of the process ID. If mult
 
 ### Step 3: Run the Setup Script
 
-The plugin includes a helper script that walks you through the setup and validates your environment:
+Install the bridge poller with a single command. No clone required — the script is fetched directly from GitHub:
 
 ```bash
-bash scripts/setup-hook.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel <channel> --target <target>
 ```
 
-If you installed the plugin via npm/bun (not from source), find the script at:
+For example:
 
 ```bash
-bash node_modules/opencode-notify-openclaw/scripts/setup-hook.sh
+# Telegram
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel telegram --target @yourhandle
+
+# WhatsApp
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel whatsapp --target +15551234567
+```
+
+If you have the repo cloned or installed via npm/bun, you can also run it locally:
+
+```bash
+# From repo root
+bash scripts/setup-hook.sh --channel telegram --target @yourhandle
+
+# From an npm/bun install
+bash node_modules/opencode-notify-openclaw/scripts/setup-hook.sh --channel telegram --target @yourhandle
 ```
 
 **What the script does:**
 
-1. Checks that `openclaw` is on your PATH (exits with an error if not)
-2. Prints the full hook configuration you need to add to `~/.openclaw/openclaw.json`
-3. Shows how to verify the setup with a manual curl command
-4. Lists the reply keywords the bridge recognizes
+1. Checks that `openclaw`, `curl`, and optionally `jq` are on your PATH
+2. Verifies the Openclaw gateway is reachable
+3. Tests that the channel and target are readable
+4. Writes a polling script to `~/.openclaw/opencode-bridge-poll.sh`
+5. Starts the poller as a background process and saves its PID to `/tmp/opencode-bridge-poll.pid`
 
-The script doesn't modify any files. It's purely informational. You still need to manually add the hook to your Openclaw config.
+The poller runs every 5 seconds, reads new messages from your channel, and forwards them to the bridge server.
 
-**Expected output on success:**
+**Preview without making changes:**
 
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel telegram --target @yourhandle --dry-run
 ```
-✓ openclaw is installed and available on PATH
-```
 
-Followed by the setup instructions. If you see `ERROR: openclaw command not found on PATH`, fix that first.
+**To uninstall:**
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) --uninstall
+```
 
 ### Step 4: Verify the Bridge
 
@@ -1061,20 +1084,26 @@ EOF
 **3. Set up the bridge poller non-interactively:**
 
 ```bash
-./scripts/setup-hook.sh --channel telegram --target @yourhandle
+# No clone needed — run directly from GitHub:
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel telegram --target @yourhandle
 ```
 
 For a different channel:
 
 ```bash
-./scripts/setup-hook.sh --channel whatsapp --target +15551234567
-./scripts/setup-hook.sh --channel discord --target "#my-channel"
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel whatsapp --target +15551234567
+
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel discord --target "#my-channel"
 ```
 
 **4. Preview without making changes:**
 
 ```bash
-./scripts/setup-hook.sh --channel telegram --target @yourhandle --dry-run
+bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
+  --channel telegram --target @yourhandle --dry-run
 ```
 
 ### What `setup-hook.sh` Does
