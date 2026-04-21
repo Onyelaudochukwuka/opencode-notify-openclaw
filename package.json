@@ -9,7 +9,7 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": ["dist"],
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node --external @opencode-ai/plugin",
     "typecheck": "tsc --noEmit",
