@@ -29,6 +29,8 @@ function truncate(text: string, maxLength: number): string {
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 }
 
+const REPLY_HINT = "\n→ Reply YES to approve, NO to deny, ALWAYS to always allow";
+
 function formatSessionIdle(_payload: SessionIdlePayload, projectId: string): string {
   return `🔔 [${projectId}] OpenCode is waiting for your input`;
 }
@@ -39,13 +41,17 @@ function formatSessionError(payload: SessionErrorPayload, projectId: string): st
   return `⚠️ [${projectId}] Error: ${truncated}`;
 }
 
-function formatPermissionAsked(payload: PermissionAskedPayload, projectId: string): string {
+function formatPermissionAsked(payload: PermissionAskedPayload, projectId: string, options?: { replyHints?: boolean }): string {
   const titleTruncated = truncate(payload.title, 100);
   let message = `🔐 [${projectId}] Permission needed: ${payload.type} — ${titleTruncated}`;
 
   if (payload.pattern) {
     const pattern = Array.isArray(payload.pattern) ? payload.pattern[0] : payload.pattern;
     message += ` (${pattern})`;
+  }
+
+  if (options?.replyHints === true) {
+    message += REPLY_HINT;
   }
 
   return message;
@@ -64,6 +70,7 @@ export function formatNotification(
   eventType: EventType,
   payload: EventPayload,
   projectId: string,
+  options?: { replyHints?: boolean },
 ): string | null {
   switch (eventType) {
     case "session.idle":
@@ -71,7 +78,7 @@ export function formatNotification(
     case "session.error":
       return formatSessionError(payload as SessionErrorPayload, projectId);
     case "permission.asked":
-      return formatPermissionAsked(payload as PermissionAskedPayload, projectId);
+      return formatPermissionAsked(payload as PermissionAskedPayload, projectId, options);
     case "permission.replied":
       return formatPermissionReplied(payload as PermissionRepliedPayload, projectId);
     case "message.updated":

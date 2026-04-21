@@ -102,3 +102,51 @@ describe("formatNotification", () => {
     expect(result).not.toContain("`");
   });
 });
+
+  it("should include reply hints for permission.asked when replyHints is true", () => {
+    const result = formatNotification("permission.asked", {
+      type: "bash",
+      title: "Execute shell command",
+      sessionID: "sess-123",
+    }, "myproject", { replyHints: true });
+    expect(result).toBeTruthy();
+    expect(result).toContain("→ Reply YES to approve, NO to deny, ALWAYS to always allow");
+  });
+
+  it("should not include reply hints for permission.asked when replyHints is false", () => {
+    const result = formatNotification("permission.asked", {
+      type: "bash",
+      title: "Execute shell command",
+      sessionID: "sess-123",
+    }, "myproject", { replyHints: false });
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("→ Reply");
+  });
+
+  it("should not include reply hints for permission.asked when options is not provided", () => {
+    const result = formatNotification("permission.asked", {
+      type: "bash",
+      title: "Execute shell command",
+      sessionID: "sess-123",
+    }, "myproject");
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("→ Reply");
+  });
+
+  it("should not include reply hints for permission.asked when options is empty object", () => {
+    const result = formatNotification("permission.asked", {
+      type: "bash",
+      title: "Execute shell command",
+      sessionID: "sess-123",
+    }, "myproject", {});
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("→ Reply");
+  });
+
+  it("should not include reply hints for other event types even with replyHints true", () => {
+    const result = formatNotification("session.idle", {
+      sessionID: "sess-123",
+    }, "myproject", { replyHints: true });
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("→ Reply");
+  });
