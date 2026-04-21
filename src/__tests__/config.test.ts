@@ -125,7 +125,7 @@ describe("loadConfig", () => {
 
     expect(config.channel).toBe("telegram");
     expect(config.target).toBe("@me");
-    expect((config as any).unknownKey).toBeUndefined();
-    expect((config as any).anotherUnknown).toBeUndefined();
+    expect(Object.hasOwn(config, "unknownKey")).toBe(false);
+    expect(Object.hasOwn(config, "anotherUnknown")).toBe(false);
   });
 });
