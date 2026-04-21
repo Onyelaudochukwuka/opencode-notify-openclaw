@@ -1,0 +1,29 @@
+{
+  "name": "opencode-notify-openclaw",
+  "version": "0.1.0",
+  "description": "OpenCode plugin that sends notifications via Openclaw to any messaging channel",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node --external @opencode-ai/plugin",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": ["opencode", "opencode-plugin", "openclaw", "notifications"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.14.19",
+    "@types/bun": "latest",
+    "typescript": "^5.8.0"
+  }
+}
