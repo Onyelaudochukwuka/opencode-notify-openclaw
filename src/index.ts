@@ -4,6 +4,10 @@ import { loadConfig } from "./config.js";
 import { createDebouncer } from "./debounce.js";
 import { shouldNotify } from "./filter.js";
 import { formatNotification } from "./format.js";
+import { createPermissionTracker } from "./permissions.js";
+import { createReplyRouter } from "./router.js";
+import type { ReplyRouter } from "./router.js";
+import { createReplyServer } from "./server.js";
 import type { EventType, NotifyOpenclawConfig } from "./types.js";
 
 function warn(message: string): void {
@@ -56,6 +60,24 @@ const plugin: Plugin = async (input, options) => {
   const sender = createSender(config, input.$);
   const enabledEvents = new Set<EventType>(config.events);
   const projectId = input.project.id;
+  let permissionTracker: ReturnType<typeof createPermissionTracker> | null = null;
+  let replyRouter: ReplyRouter | null = null;
+
+  if (config.enableReplies) {
+    const portFilePath = `/tmp/opencode-notify-openclaw-${process.pid}.port`;
+    permissionTracker = createPermissionTracker();
+    replyRouter = createReplyRouter({
+      client: input.client,
+      permissionTracker,
+      warn,
+    });
+    createReplyServer({
+      portFilePath,
+      onReply: (text) => {
+        void replyRouter?.handleReply(text);
+      },
+    });
+  }
 
   const send = async (
     eventType: EventType,
@@ -120,6 +142,44 @@ const plugin: Plugin = async (input, options) => {
     },
     "permission.ask": async (permission, output) => {
       if (output.status !== "ask") {
+        return;
+      }
+
+      if (config.enableReplies) {
+        permissionTracker!.trackPermission(permission.sessionID, permission.id);
+
+        const notificationMessage = formatNotification(
+          "permission.asked",
+          permission,
+          projectId,
+          { replyHints: true },
+        );
+
+        if (notificationMessage && enabledEvents.has("permission.asked")) {
+          await sender.send(notificationMessage);
+        }
+
+        const result = await permissionTracker!.awaitReply(
+          permission.sessionID,
+          permission.id,
+          config.replyTimeoutMs,
+        );
+
+        if (result !== null) {
+          output.status = result.response === "reject" ? "deny" : "allow";
+
+          try {
+            await input.client.postSessionIdPermissionsPermissionId({
+              path: { id: permission.sessionID, permissionID: permission.id },
+              body: { response: result.response },
+            });
+          } catch (error) {
+            warn(
+              `permission SDK call failed: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+        }
+
         return;
       }
 

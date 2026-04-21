@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
+import { readFile, unlink } from "node:fs/promises";
 import plugin from "../index.js";
 import type { PluginInput, PluginOptions } from "@opencode-ai/plugin";
 import type {
@@ -15,6 +16,16 @@ import type {
 type ShellCall = {
   expressions: unknown[];
 };
+
+const PORT_FILE_PATH = `/tmp/opencode-notify-openclaw-${process.pid}.port`;
+const startedReplyServers: Array<ReturnType<typeof Bun.serve>> = [];
+const originalBunServe = Bun.serve.bind(Bun);
+
+Bun.serve = ((options) => {
+  const server = originalBunServe(options);
+  startedReplyServers.push(server);
+  return server;
+}) as typeof Bun.serve;
 
 function createShell(calls: ShellCall[]) {
   const shell = Object.assign(
@@ -51,6 +62,23 @@ function createInput(calls: ShellCall[]): PluginInput {
     worktree: "/tmp/project",
     $: createShell(calls) as unknown as PluginInput["$"],
   };
+}
+
+function createMockClient() {
+  return {
+    postSessionIdPermissionsPermissionId: mock(() => Promise.resolve({ data: undefined })),
+    session: {
+      list: mock(() => Promise.resolve({ data: [] })),
+      promptAsync: mock(() => Promise.resolve({ data: undefined })),
+    },
+  } as unknown as PluginInput["client"];
+}
+
+function createInputWithClient(
+  calls: ShellCall[],
+  clientOverride: PluginInput["client"],
+): PluginInput {
+  return { ...createInput(calls), client: clientOverride };
 }
 
 function createPermission(overrides: Partial<Permission> = {}): Permission {
@@ -145,6 +173,22 @@ const originalStderrWrite = process.stderr.write.bind(process.stderr);
 
 afterEach(() => {
   process.stderr.write = originalStderrWrite;
+});
+
+afterEach(async () => {
+  while (startedReplyServers.length > 0) {
+    startedReplyServers.pop()?.stop();
+  }
+
+  try {
+    await unlink(PORT_FILE_PATH);
+  } catch {
+    // Ignore missing port files during test cleanup.
+  }
+});
+
+afterAll(() => {
+  Bun.serve = originalBunServe as typeof Bun.serve;
 });
 
 describe("plugin entrypoint", () => {
@@ -342,5 +386,156 @@ describe("plugin entrypoint", () => {
     await sleep(25);
 
     expect(calls).toHaveLength(0);
+  });
+});
+
+async function readReplyPort(): Promise<number> {
+  return parseInt(await readFile(PORT_FILE_PATH, "utf8"), 10);
+}
+
+async function postReply(text: string): Promise<void> {
+  const port = await readReplyPort();
+
+  await fetch(`http://127.0.0.1:${port}/reply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+}
+
+describe("plugin entrypoint — two-way replies", () => {
+  it("preserves the existing permission.ask behavior when replies are disabled", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channel: "telegram",
+      debounceMs: 10,
+      events: ["permission.asked"],
+      target: "@me",
+    });
+    const output = { status: "ask" as const };
+
+    await hooks["permission.ask"]?.(createPermission(), output);
+
+    expect(output.status).toBe("ask");
+    expect(getMessages(calls)).toEqual([
+      "🔐 [project-123] Permission needed: bash — Execute shell command",
+    ]);
+  });
+
+  it("maps a yes reply to allow and posts a once response through the SDK", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+    const hooks = await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 500,
+      target: "@me",
+    });
+    const permission = createPermission();
+    const output = { status: "ask" as "ask" | "allow" | "deny" };
+
+    const hookPromise = hooks["permission.ask"]?.(permission, output);
+    await sleep(50);
+    await postReply("yes");
+    await hookPromise;
+
+    expect(output.status).toBe("allow");
+    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+      path: { id: "sess-1", permissionID: "perm-1" },
+      body: { response: "once" },
+    });
+  });
+
+  it("maps an always reply to allow and posts an always response through the SDK", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+    const hooks = await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 500,
+      target: "@me",
+    });
+    const permission = createPermission();
+    const output = { status: "ask" as "ask" | "allow" | "deny" };
+
+    const hookPromise = hooks["permission.ask"]?.(permission, output);
+    await sleep(50);
+    await postReply("always");
+    await hookPromise;
+
+    expect(output.status).toBe("allow");
+    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+      path: { id: "sess-1", permissionID: "perm-1" },
+      body: { response: "always" },
+    });
+  });
+
+  it("maps a no reply to deny and posts a reject response through the SDK", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+    const hooks = await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 500,
+      target: "@me",
+    });
+    const permission = createPermission();
+    const output = { status: "ask" as "ask" | "allow" | "deny" };
+
+    const hookPromise = hooks["permission.ask"]?.(permission, output);
+    await sleep(50);
+    await postReply("no");
+    await hookPromise;
+
+    expect(output.status).toBe("deny");
+    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+      path: { id: "sess-1", permissionID: "perm-1" },
+      body: { response: "reject" },
+    });
+  });
+
+  it("leaves permission.ask unchanged when reply waiting times out", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+    const hooks = await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 100,
+      target: "@me",
+    });
+    const output = { status: "ask" as "ask" | "allow" | "deny" };
+
+    await hooks["permission.ask"]?.(createPermission(), output);
+
+    expect(output.status).toBe("ask");
+    expect(mockClient.postSessionIdPermissionsPermissionId).not.toHaveBeenCalled();
+  });
+
+  it("adds reply hints to permission notifications when replies are enabled", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+    const hooks = await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 100,
+      target: "@me",
+    });
+
+    await hooks["permission.ask"]?.(createPermission(), {
+      status: "ask" as "ask" | "allow" | "deny",
+    });
+
+    expect(getMessages(calls)).toHaveLength(1);
+    expect(getMessages(calls)[0]).toContain("→ Reply YES to approve");
   });
 });
