@@ -4,13 +4,15 @@ import { loadConfig } from "./config.js";
 import { createDebouncer } from "./debounce.js";
 import { shouldNotify } from "./filter.js";
 import { formatNotification } from "./format.js";
-import type { EventType } from "./types.js";
+import type { EventType, NotifyOpenclawConfig } from "./types.js";
 
 function warn(message: string): void {
   process.stderr.write(`[notify-openclaw] ${message}\n`);
 }
 
-function hasOptions(options?: Record<string, unknown>): options is Record<string, unknown> {
+function hasOptions(
+  options?: Record<string, unknown>,
+): options is Record<string, unknown> {
   return options !== undefined && Object.keys(options).length > 0;
 }
 
@@ -41,7 +43,7 @@ const plugin: Plugin = async (input, options) => {
     return {};
   }
 
-  let config;
+  let config: NotifyOpenclawConfig;
 
   try {
     config = loadConfig(options);
@@ -55,7 +57,10 @@ const plugin: Plugin = async (input, options) => {
   const enabledEvents = new Set<EventType>(config.events);
   const projectId = input.project.id;
 
-  const send = async (eventType: EventType, payload: unknown): Promise<void> => {
+  const send = async (
+    eventType: EventType,
+    payload: unknown,
+  ): Promise<void> => {
     if (!enabledEvents.has(eventType)) {
       return;
     }
@@ -68,9 +73,12 @@ const plugin: Plugin = async (input, options) => {
     await sender.send(message);
   };
 
-  const idleDebouncer = createDebouncer<string>(config.debounceMs, (message) => {
-    void sender.send(message);
-  });
+  const idleDebouncer = createDebouncer<string>(
+    config.debounceMs,
+    (message) => {
+      void sender.send(message);
+    },
+  );
 
   const hooks: Hooks = {
     event: async ({ event }) => {
@@ -80,7 +88,11 @@ const plugin: Plugin = async (input, options) => {
             return;
           }
 
-          const message = formatNotification("session.idle", event.properties as never, projectId);
+          const message = formatNotification(
+            "session.idle",
+            event.properties as never,
+            projectId,
+          );
           if (!message) {
             return;
           }
@@ -91,10 +103,12 @@ const plugin: Plugin = async (input, options) => {
         case "session.error":
           await send(
             "session.error",
-            normalizeSessionErrorPayload(event.properties as {
-              sessionID?: string;
-              error?: { message?: string; data?: { message?: string } };
-            }),
+            normalizeSessionErrorPayload(
+              event.properties as {
+                sessionID?: string;
+                error?: { message?: string; data?: { message?: string } };
+              },
+            ),
           );
           return;
         case "permission.replied":
@@ -116,7 +130,9 @@ const plugin: Plugin = async (input, options) => {
         return;
       }
 
-      const text = extractText(output.parts as Array<{ type?: string; text?: string }>);
+      const text = extractText(
+        output.parts as Array<{ type?: string; text?: string }>,
+      );
       if (!text || !shouldNotify(text)) {
         return;
       }
