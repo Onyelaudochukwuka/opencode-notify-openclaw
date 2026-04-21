@@ -1,7 +1,15 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test"
 import { createPermissionTracker } from "../permissions.js"
 
 describe("createPermissionTracker", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it("stores tracked permissions and increases pendingCount", () => {
     const tracker = createPermissionTracker()
 
@@ -52,7 +60,7 @@ describe("createPermissionTracker", () => {
     tracker.trackPermission("session-1", "permission-1")
     const replyPromise = tracker.awaitReply("session-1", "permission-1", 50)
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    vi.advanceTimersByTime(50)
 
     expect(await replyPromise).toBeNull()
     expect(tracker.pendingCount()).toBe(0)
@@ -82,7 +90,7 @@ describe("createPermissionTracker", () => {
     tracker.trackPermission("session-1", "permission-1")
     const replyPromise = tracker.awaitReply("session-1", "permission-1", 50)
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    vi.advanceTimersByTime(50)
 
     expect(await replyPromise).toBeNull()
     expect(tracker.resolvePending("once")).toBeNull()

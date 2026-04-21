@@ -62,6 +62,7 @@ const plugin: Plugin = async (input, options) => {
   const projectId = input.project.id;
   let permissionTracker: ReturnType<typeof createPermissionTracker> | null = null;
   let replyRouter: ReplyRouter | null = null;
+  let stopReplyServer: (() => void) | null = null;
 
   if (config.enableReplies) {
     const portFilePath = `/tmp/opencode-notify-openclaw-${process.pid}.port`;
@@ -71,11 +72,19 @@ const plugin: Plugin = async (input, options) => {
       permissionTracker,
       warn,
     });
-    createReplyServer({
+    const replyServer = createReplyServer({
       portFilePath,
       onReply: (text) => {
         void replyRouter?.handleReply(text);
       },
+    });
+
+    stopReplyServer = () => {
+      replyServer.stop();
+    };
+
+    process.once("exit", () => {
+      stopReplyServer?.();
     });
   }
 

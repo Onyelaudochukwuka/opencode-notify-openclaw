@@ -23,12 +23,9 @@ EOF
 
 # Check if openclaw is installed
 if ! command -v openclaw &> /dev/null; then
-  cat << 'EOF'
-⚠️  WARNING: openclaw command not found on PATH
-    You may need to install Openclaw first.
-    See: https://github.com/openclaw/openclaw
-
-EOF
+  echo "ERROR: openclaw command not found on PATH." >&2
+  echo "Install Openclaw first: https://github.com/openclaw/openclaw" >&2
+  exit 1
 else
   cat << 'EOF'
 ✓ openclaw is installed and available on PATH

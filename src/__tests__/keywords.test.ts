@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { parseReply, type ParsedReply } from "../keywords.js";
+import { parseReply } from "../keywords.js";
 
 describe("parseReply", () => {
   describe("Permission — once keywords", () => {
@@ -21,6 +21,10 @@ describe("parseReply", () => {
 
     it("should parse 'Yes' (mixed case) as permission once", () => {
       expect(parseReply("Yes")).toEqual({ type: "permission", response: "once" });
+    });
+
+    it("should parse 'yEs' (mixed case) as permission once", () => {
+      expect(parseReply("yEs")).toEqual({ type: "permission", response: "once" });
     });
   });
 
@@ -53,6 +57,10 @@ describe("parseReply", () => {
 
     it("should parse 'NO' (uppercase) as permission reject", () => {
       expect(parseReply("NO")).toEqual({ type: "permission", response: "reject" });
+    });
+
+    it("should parse 'Deny' (mixed case) as permission reject", () => {
+      expect(parseReply("Deny")).toEqual({ type: "permission", response: "reject" });
     });
   });
 

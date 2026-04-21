@@ -538,4 +538,84 @@ describe("plugin entrypoint — two-way replies", () => {
     expect(getMessages(calls)).toHaveLength(1);
     expect(getMessages(calls)[0]).toContain("→ Reply YES to approve");
   });
+
+  it("routes free-text replies to promptAsync on the most recent session", async () => {
+    const calls: ShellCall[] = [];
+    const sessionList = mock(() =>
+      Promise.resolve({
+        data: [
+          { id: "sess-older", time: { updated: 10 } },
+          { id: "sess-newer", time: { updated: 20 } },
+        ],
+      }),
+    );
+    const promptAsync = mock(() => Promise.resolve({ data: undefined }));
+    const mockClient = {
+      postSessionIdPermissionsPermissionId: mock(() => Promise.resolve({ data: undefined })),
+      session: {
+        list: sessionList,
+        promptAsync,
+      },
+    } as unknown as PluginInput["client"];
+
+    await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 500,
+      target: "@me",
+    });
+
+    await sleep(50);
+    await postReply("please switch to the main branch");
+    await sleep(50);
+
+    expect(promptAsync).toHaveBeenCalledWith({
+      path: { id: "sess-newer" },
+      body: {
+        parts: [{ type: "text", text: "please switch to the main branch" }],
+      },
+    });
+  });
+
+  it("does not start the reply server when replies are disabled", async () => {
+    const calls: ShellCall[] = [];
+
+    await plugin(createInput(calls), {
+      channel: "telegram",
+      debounceMs: 10,
+      events: ["permission.asked"],
+      target: "@me",
+    });
+
+    expect(startedReplyServers).toHaveLength(0);
+    expect(readFile(PORT_FILE_PATH, "utf8")).rejects.toThrow();
+  });
+
+  it("stops the reply server during process exit cleanup", async () => {
+    const calls: ShellCall[] = [];
+    const mockClient = createMockClient();
+
+    await plugin(createInputWithClient(calls, mockClient), {
+      channel: "telegram",
+      debounceMs: 10,
+      enableReplies: true,
+      events: ["permission.asked"],
+      replyTimeoutMs: 500,
+      target: "@me",
+    });
+
+    const startedServer = startedReplyServers[startedReplyServers.length - 1];
+    if (!startedServer) {
+      throw new Error("reply server was not started");
+    }
+
+    const stopSpy = mock(startedServer.stop.bind(startedServer));
+    startedServer.stop = stopSpy;
+
+    process.emit("exit", 0);
+
+    expect(stopSpy).toHaveBeenCalled();
+  });
 });

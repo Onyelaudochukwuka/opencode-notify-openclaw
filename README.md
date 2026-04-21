@@ -181,7 +181,9 @@ Add the plugin to your `opencode.json` as a tuple with options:
       "channel": "telegram",
       "target": "@yourhandle",
       "debounceMs": 5000,
-      "events": ["session.idle", "session.error", "permission.asked"]
+      "events": ["session.idle", "session.error", "permission.asked"],
+      "enableReplies": true,
+      "replyTimeoutMs": 120000
     }]
   ]
 }
