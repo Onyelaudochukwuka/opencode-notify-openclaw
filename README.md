@@ -12,7 +12,7 @@ This plugin hooks into OpenCode's event system and sends plain-text notification
 - **Permission replied** ... a permission request was resolved
 - **Message updated** ... the assistant posted a message that looks like a question
 
-Notifications are one-way by default. With `enableReplies: true`, replies from the channel are forwarded back to OpenCode as permission decisions or session input. Messages are plain text, truncated to 4000 characters.
+Notifications are two-way by default. Replies from the channel are forwarded back to OpenCode as permission decisions or session input. To disable replies, set `enableReplies: false`. Messages are plain text, truncated to 4000 characters.
 
 `session.idle` events are debounced (default: 3 seconds) so rapid-fire idle signals collapse into a single notification. All other events send immediately.
 
@@ -212,7 +212,7 @@ Add the plugin to your `opencode.json` as a tuple with options:
 | `account` | `string` | No | | Openclaw account name, if you have multiple accounts configured |
 | `debounceMs` | `number` | No | `3000` | Debounce window for `session.idle` events, in milliseconds. Must be > 0. |
 | `events` | `string[]` | No | All five events | Which events trigger notifications. Unrecognized values are silently ignored. |
-| `enableReplies` | `boolean` | No | `false` | Enable two-way reply bridge. See [Two-Way Replies](#two-way-replies). |
+| `enableReplies` | `boolean` | No | `true` | Enable two-way reply bridge. See [Two-Way Replies](#two-way-replies). |
 | `replyTimeoutMs` | `number` | No | `120000` | Milliseconds to wait for a reply before timeout. Only used when `enableReplies` is `true`. |
 
 `channel` and `target` are the only required fields. Everything else has sensible defaults.
@@ -289,7 +289,7 @@ Code blocks are stripped before checking, so ternary operators like `a ? b : c` 
 
 ## Known Limitations
 
-- **One-way by default.** Replies are not supported unless `enableReplies: true` is set. See [Two-Way Replies](#two-way-replies) for setup.
+- **Two-way by default.** Replies from the channel are forwarded back to OpenCode. To disable, set `enableReplies: false`. See [Two-Way Replies](#two-way-replies) for setup.
 - **Plain text.** No rich formatting, Markdown, or media attachments.
 - **No retries.** If the Openclaw CLI call fails, the message is dropped. A warning is written to stderr.
 - **No channel validation.** The plugin doesn't verify that your `channel` or `target` values are valid. Errors surface at send time.

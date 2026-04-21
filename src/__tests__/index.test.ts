@@ -270,6 +270,7 @@ describe("plugin entrypoint", () => {
       channel: "telegram",
       debounceMs: 10,
       events: ["permission.asked"],
+      enableReplies: false,
       target: "@me",
     });
 
@@ -365,6 +366,7 @@ describe("plugin entrypoint", () => {
       channel: "telegram",
       debounceMs: 10,
       events: ["session.error"],
+      enableReplies: false,
       target: "@me",
     });
 
@@ -410,6 +412,7 @@ describe("plugin entrypoint — two-way replies", () => {
       channel: "telegram",
       debounceMs: 10,
       events: ["permission.asked"],
+      enableReplies: false,
       target: "@me",
     });
     const output = { status: "ask" as const };
@@ -586,6 +589,7 @@ describe("plugin entrypoint — two-way replies", () => {
       channel: "telegram",
       debounceMs: 10,
       events: ["permission.asked"],
+      enableReplies: false,
       target: "@me",
     });
 

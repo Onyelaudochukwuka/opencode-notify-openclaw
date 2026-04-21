@@ -130,7 +130,7 @@ describe("loadConfig", () => {
   });
 });
 
-  it("should default enableReplies to false when not provided", () => {
+  it("should default enableReplies to true when not provided", () => {
     const options: PluginOptions = {
       channel: "telegram",
       target: "@me",
@@ -138,7 +138,7 @@ describe("loadConfig", () => {
 
     const config = loadConfig(options);
 
-    expect(config.enableReplies).toBe(false);
+    expect(config.enableReplies).toBe(true);
   });
 
   it("should accept enableReplies: true as-is", () => {
@@ -153,7 +153,7 @@ describe("loadConfig", () => {
     expect(config.enableReplies).toBe(true);
   });
 
-  it("should default enableReplies to false when given non-boolean value", () => {
+  it("should default enableReplies to true when given non-boolean value", () => {
     const options: PluginOptions = {
       channel: "telegram",
       target: "@me",
@@ -162,7 +162,7 @@ describe("loadConfig", () => {
 
     const config = loadConfig(options);
 
-    expect(config.enableReplies).toBe(false);
+    expect(config.enableReplies).toBe(true);
   });
 
   it("should default replyTimeoutMs to 120000 when not provided", () => {

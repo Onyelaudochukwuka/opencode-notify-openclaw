@@ -843,7 +843,7 @@ Reply from your messaging app with `yes`. The permission should resolve in OpenC
 
 **Possible causes and fixes:**
 
-1. **`enableReplies` not set:** Make sure your `opencode.json` includes `"enableReplies": true`.
+1. **`enableReplies` explicitly disabled:** Check your `opencode.json` doesn't have `"enableReplies": false`. Replies are enabled by default — only set this if you want to disable them.
 
 2. **Openclaw hook not configured:** Check `~/.openclaw/openclaw.json` for the `message:received` hook. If it's missing, add it (see [Step 2](#step-2-set-up-the-openclaw-hook)).
 
@@ -1079,7 +1079,7 @@ All plugin configuration comes from `opencode.json`. There are no environment va
 | `account` | string | — | Multi-account Openclaw setups |
 | `debounceMs` | number | `3000` | `session.idle` debounce window |
 | `events` | string[] | all | Which events trigger notifications |
-| `enableReplies` | boolean | `false` | Enable two-way bridge |
+| `enableReplies` | boolean | `true` | Enable two-way bridge |
 | `replyTimeoutMs` | number | `120000` | Permission reply timeout (ms) |
 
 ### Adjusting the Poll Interval

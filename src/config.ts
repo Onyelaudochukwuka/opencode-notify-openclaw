@@ -45,8 +45,8 @@ export function loadConfig(options: PluginOptions): NotifyOpenclawConfig {
   // Extract account (optional, string or undefined)
   const account = typeof options.account === "string" ? options.account : undefined;
 
-  // Validate enableReplies (optional, defaults to false)
-  const enableReplies = typeof options?.enableReplies === "boolean" ? options.enableReplies : false;
+  // Validate enableReplies (optional, defaults to true)
+  const enableReplies = typeof options?.enableReplies === "boolean" ? options.enableReplies : true;
 
   // Validate replyTimeoutMs (optional, must be > 0 if provided)
   const replyTimeoutMs =
