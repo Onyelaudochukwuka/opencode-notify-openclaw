@@ -34,6 +34,8 @@ const BASE_CONFIG: NotifyOpenclawConfig = {
   channel: "telegram",
   target: "@me",
   debounceMs: 3000,
+  enableReplies: false,
+  replyTimeoutMs: 120000,
   events: [],
 };
 

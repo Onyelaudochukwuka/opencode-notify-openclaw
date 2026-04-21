@@ -129,3 +129,85 @@ describe("loadConfig", () => {
     expect(Object.hasOwn(config, "anotherUnknown")).toBe(false);
   });
 });
+
+  it("should default enableReplies to false when not provided", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.enableReplies).toBe(false);
+  });
+
+  it("should accept enableReplies: true as-is", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+      enableReplies: true,
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.enableReplies).toBe(true);
+  });
+
+  it("should default enableReplies to false when given non-boolean value", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+      enableReplies: "yes" as any,
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.enableReplies).toBe(false);
+  });
+
+  it("should default replyTimeoutMs to 120000 when not provided", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.replyTimeoutMs).toBe(120000);
+  });
+
+  it("should accept replyTimeoutMs: 60000 as-is", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+      replyTimeoutMs: 60000,
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.replyTimeoutMs).toBe(60000);
+  });
+
+  it("should default replyTimeoutMs to 120000 when given 0", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+      replyTimeoutMs: 0,
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.replyTimeoutMs).toBe(120000);
+  });
+
+  it("should default replyTimeoutMs to 120000 when given negative value", () => {
+    const options: PluginOptions = {
+      channel: "telegram",
+      target: "@me",
+      replyTimeoutMs: -1,
+    };
+
+    const config = loadConfig(options);
+
+    expect(config.replyTimeoutMs).toBe(120000);
+  });

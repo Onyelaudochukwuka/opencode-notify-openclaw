@@ -14,6 +14,8 @@ export type NotifyOpenclawConfig = {
   target: string;
   account?: string;
   debounceMs: number;
+  enableReplies: boolean;
+  replyTimeoutMs: number;
   events: EventType[];
 };
 
@@ -26,3 +28,5 @@ export const DEFAULT_EVENTS: EventType[] = [
 ];
 
 export const DEFAULT_DEBOUNCE_MS = 3000;
+
+export const DEFAULT_REPLY_TIMEOUT_MS = 120000;

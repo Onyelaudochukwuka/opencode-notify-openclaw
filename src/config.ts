@@ -1,6 +1,6 @@
 import type { PluginOptions } from "@opencode-ai/plugin";
 import type { NotifyOpenclawConfig, EventType } from "./types.js";
-import { DEFAULT_DEBOUNCE_MS, DEFAULT_EVENTS } from "./types.js";
+import { DEFAULT_DEBOUNCE_MS, DEFAULT_EVENTS, DEFAULT_REPLY_TIMEOUT_MS } from "./types.js";
 
 const VALID_EVENTS = new Set<EventType>([
   "session.idle",
@@ -45,11 +45,22 @@ export function loadConfig(options: PluginOptions): NotifyOpenclawConfig {
   // Extract account (optional, string or undefined)
   const account = typeof options.account === "string" ? options.account : undefined;
 
+  // Validate enableReplies (optional, defaults to false)
+  const enableReplies = typeof options?.enableReplies === "boolean" ? options.enableReplies : false;
+
+  // Validate replyTimeoutMs (optional, must be > 0 if provided)
+  const replyTimeoutMs =
+    typeof options?.replyTimeoutMs === "number" && options.replyTimeoutMs > 0
+      ? options.replyTimeoutMs
+      : DEFAULT_REPLY_TIMEOUT_MS;
+
   return {
     channel: options.channel,
     target: options.target,
     account,
     debounceMs,
+    enableReplies,
+    replyTimeoutMs,
     events,
   };
 }
