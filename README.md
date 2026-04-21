@@ -163,6 +163,22 @@ Keywords are case-insensitive. Partial matches are not supported, exact match on
 
 Run `scripts/setup-hook.sh` for step-by-step Openclaw hook setup instructions.
 
+### Openclaw Hook Setup
+
+Add the following to `~/.openclaw/openclaw.json` under the `"hooks"` section:
+
+```json
+"message:received": {
+  "command": "bash",
+  "args": [
+    "-c",
+    "curl -s -X POST \"http://127.0.0.1:$(cat /tmp/opencode-notify-openclaw-*.port)/reply\" -H \"Content-Type: application/json\" -d \"$(printf '{\"text\": \"%s\"}' \"$MESSAGE_TEXT\")\""
+  ]
+}
+```
+
+The bridge server writes its port to `/tmp/opencode-notify-openclaw-{pid}.port` on startup. The hook reads this file dynamically so no manual port configuration is needed.
+
 ### Limitations
 
 - Replies route to `127.0.0.1` only (never exposed externally)
