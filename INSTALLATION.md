@@ -1023,6 +1023,159 @@ Reply from your messaging app with `yes`. The permission should resolve in OpenC
 
 5. **Missing required fields:** If `channel` or `target` is missing, the plugin logs a warning and returns empty hooks (no notifications). Check OpenCode's stderr output for `Config validation failed` messages.
 
+## Agent and Automation Setup
+
+This section covers running `opencode-notify-openclaw` in headless or automated environments — CI pipelines, AI agent workflows, or any context where interactive prompts are not available.
+
+### Non-Interactive Installation
+
+Every setup step can be performed without user interaction using CLI flags and heredocs.
+
+**1. Install the package:**
+
+```bash
+# npm
+npm install opencode-notify-openclaw
+
+# bun
+bun add opencode-notify-openclaw
+```
+
+**2. Write `opencode.json` non-interactively:**
+
+```bash
+cat > opencode.json << 'EOF'
+{
+  "plugin": [
+    ["opencode-notify-openclaw", {
+      "channel": "telegram",
+      "target": "@yourhandle",
+      "enableReplies": true,
+      "replyTimeoutMs": 120000
+    }]
+  ]
+}
+EOF
+```
+
+**3. Set up the bridge poller non-interactively:**
+
+```bash
+./scripts/setup-hook.sh --channel telegram --target @yourhandle
+```
+
+For a different channel:
+
+```bash
+./scripts/setup-hook.sh --channel whatsapp --target +15551234567
+./scripts/setup-hook.sh --channel discord --target "#my-channel"
+```
+
+**4. Preview without making changes:**
+
+```bash
+./scripts/setup-hook.sh --channel telegram --target @yourhandle --dry-run
+```
+
+### What `setup-hook.sh` Does
+
+The script performs the following steps automatically:
+
+1. Checks that `openclaw`, `curl`, and optionally `jq` are on `PATH`
+2. Verifies the Openclaw gateway is reachable
+3. Tests that the specified channel and target are readable
+4. Writes a polling script to `~/.openclaw/opencode-bridge-poll.sh`
+5. Starts the poller as a background process and records its PID in `/tmp/opencode-bridge-poll.pid`
+
+The polling script runs a loop every 5 seconds (configurable with `--interval`). On each iteration it:
+
+- Finds the bridge server port from `/tmp/opencode-notify-openclaw-*.port`
+- Calls `openclaw message read --json` to fetch messages newer than the last-seen ID
+- POSTs each new message text to `http://127.0.0.1:{port}/reply`
+- Updates the last-seen ID in `/tmp/openclaw-bridge-last-{channel}-{target}`
+
+The first run records the current latest message ID without forwarding it, so historical messages are never replayed.
+
+### Headless Verification
+
+After OpenCode starts with `enableReplies: true`, verify the full stack is working:
+
+```bash
+# 1. Confirm the bridge server is running
+ls /tmp/opencode-notify-openclaw-*.port
+
+# 2. Read the port
+PORT=$(cat /tmp/opencode-notify-openclaw-*.port)
+
+# 3. Check the bridge health endpoint
+curl -s http://127.0.0.1:$PORT/health
+# Expected: {"status":"ok"}
+
+# 4. Send a test reply (simulates a keyword reply)
+curl -s -X POST http://127.0.0.1:$PORT/reply \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "yes"}'
+# Expected: {"ok":true}
+
+# 5. Send a test free-text reply
+curl -s -X POST http://127.0.0.1:$PORT/reply \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "what is the status of the build?"}'
+# Expected: {"ok":true}
+
+# 6. Confirm the poller is running
+cat /tmp/opencode-bridge-poll.pid
+kill -0 $(cat /tmp/opencode-bridge-poll.pid) && echo 'poller running' || echo 'poller stopped'
+```
+
+### Configuration Reference
+
+All plugin configuration comes from `opencode.json`. There are no environment variable overrides — every option must be set in the plugin tuple.
+
+| Option | Type | Default | Notes |
+|--------|------|---------|-------|
+| `channel` | string | required | Openclaw channel name |
+| `target` | string | required | Recipient identifier |
+| `account` | string | — | Multi-account Openclaw setups |
+| `debounceMs` | number | `3000` | `session.idle` debounce window |
+| `events` | string[] | all | Which events trigger notifications |
+| `enableReplies` | boolean | `false` | Enable two-way bridge |
+| `replyTimeoutMs` | number | `120000` | Permission reply timeout (ms) |
+
+### Adjusting the Poll Interval
+
+The default poll interval is 5 seconds. To change it:
+
+```bash
+./scripts/setup-hook.sh --channel telegram --target @yourhandle --interval 10
+```
+
+Lower values give faster reply delivery but increase Openclaw API calls. Values below 2 seconds are not recommended.
+
+### Cleanup in Automated Environments
+
+To stop the poller and clean up all temporary files:
+
+```bash
+# Stop the poller
+./scripts/setup-hook.sh --uninstall
+
+# Remove the last-seen ID file (optional — safe to leave)
+rm -f /tmp/openclaw-bridge-last-*
+
+# The bridge server port file is removed automatically when OpenCode exits.
+# If it was not cleaned up:
+rm -f /tmp/opencode-notify-openclaw-*.port
+```
+
+To remove the polling script itself:
+
+```bash
+rm -f ~/.openclaw/opencode-bridge-poll.sh
+```
+
+---
+
 ---
 
 ## Uninstalling
