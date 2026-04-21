@@ -12,7 +12,7 @@ This plugin hooks into OpenCode's event system and sends plain-text notification
 - **Permission replied** ... a permission request was resolved
 - **Message updated** ... the assistant posted a message that looks like a question
 
-Notifications are one-way. You can't reply through the channel. Messages are plain text, truncated to 4000 characters.
+Notifications are one-way by default. With `enableReplies: true`, replies from the channel are forwarded back to OpenCode as permission decisions or session input. Messages are plain text, truncated to 4000 characters.
 
 `session.idle` events are debounced (default: 3 seconds) so rapid-fire idle signals collapse into a single notification. All other events send immediately.
 
@@ -115,6 +115,61 @@ This is normal — the plugin allows only one concurrent send. The dropped messa
 **Messages are truncated**
 Messages over 4000 characters are automatically truncated. This is by design to stay within messaging app limits.
 
+## Two-Way Replies
+
+When `enableReplies: true`, the plugin starts a local HTTP server and forwards
+incoming Openclaw messages back to OpenCode as permission decisions or free-text
+session input.
+
+### Prerequisites
+
+- Openclaw Gateway must be running and configured with a bidirectional channel
+- The Openclaw `message:received` hook must be set up (see `scripts/setup-hook.sh`)
+
+### Configuration
+
+```json
+{
+  "plugin": [
+    ["opencode-notify-openclaw", {
+      "channel": "telegram",
+      "target": "@yourhandle",
+      "enableReplies": true,
+      "replyTimeoutMs": 120000
+    }]
+  ]
+}
+```
+
+### Reply Keywords
+
+When a permission notification arrives, reply with one of these keywords:
+
+| Reply       | Action                    |
+|-------------|---------------------------|
+| `yes`, `y`, `allow` | Approve once     |
+| `always`    | Approve always            |
+| `no`, `n`, `deny`, `reject` | Deny     |
+| Anything else | Sent as free-text to the most recent session |
+
+Keywords are case-insensitive. Partial matches are not supported, exact match only.
+
+### How It Works
+
+1. The plugin starts a local HTTP server on `127.0.0.1` with a random port
+2. The port is written to `/tmp/opencode-notify-openclaw-{pid}.port`
+3. Openclaw calls the local server when a `message:received` event fires
+4. The plugin parses the reply, resolves the pending permission or injects free text
+
+Run `scripts/setup-hook.sh` for step-by-step Openclaw hook setup instructions.
+
+### Limitations
+
+- Replies route to `127.0.0.1` only (never exposed externally)
+- Free-text replies go to the most recently active session only
+- Timeout defaults to 2 minutes. Unanswered permissions fall through to OpenCode's normal prompt.
+- No retry logic. If the reply server is not running, Openclaw's curl hook will fail silently.
+
 ## Configuration
 
 Add the plugin to your `opencode.json` as a tuple with options:
@@ -141,6 +196,8 @@ Add the plugin to your `opencode.json` as a tuple with options:
 | `account` | `string` | No | | Openclaw account name, if you have multiple accounts configured |
 | `debounceMs` | `number` | No | `3000` | Debounce window for `session.idle` events, in milliseconds. Must be > 0. |
 | `events` | `string[]` | No | All five events | Which events trigger notifications. Unrecognized values are silently ignored. |
+| `enableReplies` | `boolean` | No | `false` | Enable two-way reply bridge. See [Two-Way Replies](#two-way-replies). |
+| `replyTimeoutMs` | `number` | No | `120000` | Milliseconds to wait for a reply before timeout. Only used when `enableReplies` is `true`. |
 
 `channel` and `target` are the only required fields. Everything else has sensible defaults.
 
@@ -216,7 +273,7 @@ Code blocks are stripped before checking, so ternary operators like `a ? b : c` 
 
 ## Known Limitations
 
-- **One-way only.** You receive notifications but can't respond through the channel.
+- **One-way by default.** Replies are not supported unless `enableReplies: true` is set. See [Two-Way Replies](#two-way-replies) for setup.
 - **Plain text.** No rich formatting, Markdown, or media attachments.
 - **No retries.** If the Openclaw CLI call fails, the message is dropped. A warning is written to stderr.
 - **No channel validation.** The plugin doesn't verify that your `channel` or `target` values are valid. Errors surface at send time.
