@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
 import type { $ } from "bun";
 import { createSender } from "../cli.js";
-import type { NotifyOpenclawConfig } from "../types.js";
+import type { ChannelConfig } from "../types.js";
 
 type BunShell = typeof $;
 
@@ -30,14 +30,12 @@ type Behavior =
   | { type: "resolve"; exitCode: number }
   | { type: "hang" };
 
-const BASE_CONFIG: NotifyOpenclawConfig = {
+const BASE_CHANNEL: ChannelConfig = {
   channel: "telegram",
   target: "@me",
-  debounceMs: 3000,
-  enableReplies: false,
-  replyTimeoutMs: 120000,
-  events: [],
 };
+
+const BASE_CHANNELS: ChannelConfig[] = [BASE_CHANNEL];
 
 function createMockResult(exitCode: number): MockResult {
   const stdout = Buffer.from("");
@@ -147,7 +145,7 @@ afterEach(() => {
 describe("createSender", () => {
   it("sends successfully with required flags", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send("hello world");
 
@@ -167,7 +165,7 @@ describe("createSender", () => {
 
   it("includes --account when configured", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender({ ...BASE_CONFIG, account: "primary" }, shell);
+    const sender = createSender([{ ...BASE_CHANNEL, account: "primary" }], shell);
 
     await sender.send("hello world");
 
@@ -188,7 +186,7 @@ describe("createSender", () => {
 
   it("omits --account when not configured", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send("hello world");
 
@@ -198,7 +196,7 @@ describe("createSender", () => {
   it("passes shell metacharacters literally", async () => {
     const message = "$(rm -rf /)";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(message);
 
@@ -209,7 +207,7 @@ describe("createSender", () => {
   it("passes backticks literally", async () => {
     const message = "`whoami`";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(message);
 
@@ -219,7 +217,7 @@ describe("createSender", () => {
   it("passes single quotes literally", async () => {
     const message = "it's literal";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(message);
 
@@ -229,7 +227,7 @@ describe("createSender", () => {
   it("passes double quotes literally", async () => {
     const message = 'say "hello"';
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(message);
 
@@ -239,7 +237,7 @@ describe("createSender", () => {
   it("passes newlines through unchanged", async () => {
     const message = "line one\nline two";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(message);
 
@@ -250,7 +248,7 @@ describe("createSender", () => {
     const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
 
     const { shell } = createMockShell({ type: "resolve", exitCode: 1 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await expect(sender.send("hello")).resolves.toBeUndefined();
     expect(getWarnings(writeSpy)).toContain("openclaw exited with code 1");
@@ -260,7 +258,7 @@ describe("createSender", () => {
     const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
 
     const { shell } = createMockShell({ type: "resolve", exitCode: 127 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await expect(sender.send("hello")).resolves.toBeUndefined();
     expect(getWarnings(writeSpy)).toContain("openclaw not found");
@@ -272,7 +270,7 @@ describe("createSender", () => {
 
     const shellState = createMockShell({ type: "hang" });
     const { shell } = shellState;
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
     const sendPromise = sender.send("hello");
 
     vi.advanceTimersByTime(10_000);
@@ -285,7 +283,7 @@ describe("createSender", () => {
   it("truncates messages longer than 4000 characters", async () => {
     const longMessage = "a".repeat(4001);
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send(longMessage);
 
@@ -296,7 +294,7 @@ describe("createSender", () => {
 
   it("skips empty or whitespace-only messages", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CONFIG, shell);
+    const sender = createSender(BASE_CHANNELS, shell);
 
     await sender.send("   \n\t  ");
 
@@ -340,7 +338,7 @@ describe("createSender", () => {
       },
     ) as unknown as BunShell;
 
-    const sender = createSender(BASE_CONFIG, shellTag);
+    const sender = createSender(BASE_CHANNELS, shellTag);
 
     const firstSend = sender.send("first");
     const secondSend = sender.send("second");

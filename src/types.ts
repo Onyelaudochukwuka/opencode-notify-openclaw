@@ -9,10 +9,14 @@ export type EventType =
   | "permission.replied"
   | "message.updated";
 
-export type NotifyOpenclawConfig = {
+export type ChannelConfig = {
   channel: string;
   target: string;
   account?: string;
+};
+
+export type NotifyOpenclawConfig = {
+  channels: ChannelConfig[];
   debounceMs: number;
   enableReplies: boolean;
   replyTimeoutMs: number;

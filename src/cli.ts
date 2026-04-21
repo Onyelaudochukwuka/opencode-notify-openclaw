@@ -1,4 +1,4 @@
-import type { NotifyOpenclawConfig, PluginInput } from "./types.js";
+import type { ChannelConfig, PluginInput } from "./types.js";
 
 type BunShell = PluginInput["$"];
 
@@ -38,14 +38,14 @@ function createTimeout(): Promise<symbol> {
 }
 
 async function runCommand(
-  config: NotifyOpenclawConfig,
+  channel: ChannelConfig,
   shell: BunShell,
   message: string,
 ): Promise<ShellOutputLike | symbol> {
   const command = (
-    config.account
-      ? shell.nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --account ${config.account} --message ${message}`
-      : shell.nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --message ${message}`
+    channel.account
+      ? shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --account ${channel.account} --message ${message}`
+      : shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --message ${message}`
   ) as KillablePromise;
 
   const result = await Promise.race<ShellOutputLike | symbol>([
@@ -60,10 +60,36 @@ async function runCommand(
   return result;
 }
 
-export function createSender(
-  config: NotifyOpenclawConfig,
+async function sendToChannel(
+  channel: ChannelConfig,
   shell: BunShell,
-): Sender {
+  message: string,
+): Promise<void> {
+  try {
+    const result = await runCommand(channel, shell, message);
+
+    if (typeof result === "symbol") {
+      warn(`openclaw timed out after ${CLI_TIMEOUT_MS}ms (channel: ${channel.channel})`);
+      return;
+    }
+
+    if (result.exitCode === 0) {
+      return;
+    }
+
+    if (result.exitCode === 127) {
+      warn("openclaw not found");
+      return;
+    }
+
+    warn(`openclaw exited with code ${result.exitCode} (channel: ${channel.channel})`);
+  } catch (error) {
+    const messageText = error instanceof Error ? error.message : String(error);
+    warn(`openclaw invocation failed (channel: ${channel.channel}): ${messageText}`);
+  }
+}
+
+export function createSender(channels: ChannelConfig[], shell: BunShell): Sender {
   let busy = false;
 
   return {
@@ -80,31 +106,9 @@ export function createSender(
       busy = true;
 
       try {
-        const result = await runCommand(
-          config,
-          shell,
-          truncateMessage(message),
+        await Promise.all(
+          channels.map((ch) => sendToChannel(ch, shell, truncateMessage(message))),
         );
-
-        if (typeof result === "symbol") {
-          warn(`openclaw timed out after ${CLI_TIMEOUT_MS}ms`);
-          return;
-        }
-
-        if (result.exitCode === 0) {
-          return;
-        }
-
-        if (result.exitCode === 127) {
-          warn("openclaw not found");
-          return;
-        }
-
-        warn(`openclaw exited with code ${result.exitCode}`);
-      } catch (error) {
-        const messageText =
-          error instanceof Error ? error.message : String(error);
-        warn(`openclaw invocation failed: ${messageText}`);
       } finally {
         busy = false;
       }

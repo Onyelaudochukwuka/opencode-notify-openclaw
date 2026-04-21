@@ -5,33 +5,30 @@ import type { PluginOptions } from "@opencode-ai/plugin";
 describe("loadConfig", () => {
   it("should load a valid full config with all fields", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
-      account: "acc1",
+      channels: [{ channel: "telegram", target: "@me", account: "acc1" }],
       debounceMs: 5000,
       events: ["session.idle"],
     };
 
     const config = loadConfig(options);
 
-    expect(config.channel).toBe("telegram");
-    expect(config.target).toBe("@me");
-    expect(config.account).toBe("acc1");
+    expect(config.channels[0]!.channel).toBe("telegram");
+    expect(config.channels[0]!.target).toBe("@me");
+    expect(config.channels[0]!.account).toBe("acc1");
     expect(config.debounceMs).toBe(5000);
     expect(config.events).toEqual(["session.idle"]);
   });
 
-  it("should use defaults for minimal config (channel + target only)", () => {
+  it("should use defaults for minimal config (channels array only)", () => {
     const options: PluginOptions = {
-      channel: "whatsapp",
-      target: "+15555550123",
+      channels: [{ channel: "whatsapp", target: "+15555550123" }],
     };
 
     const config = loadConfig(options);
 
-    expect(config.channel).toBe("whatsapp");
-    expect(config.target).toBe("+15555550123");
-    expect(config.account).toBeUndefined();
+    expect(config.channels[0]!.channel).toBe("whatsapp");
+    expect(config.channels[0]!.target).toBe("+15555550123");
+    expect(config.channels[0]!.account).toBeUndefined();
     expect(config.debounceMs).toBe(3000);
     expect(config.events).toEqual([
       "session.idle",
@@ -42,26 +39,23 @@ describe("loadConfig", () => {
     ]);
   });
 
-  it("should throw error when channel is missing", () => {
-    const options: PluginOptions = {
-      target: "@me",
-    };
+  it("should throw when channels is missing", () => {
+    const options: PluginOptions = {};
 
-    expect(() => loadConfig(options)).toThrow(/channel/i);
+    expect(() => loadConfig(options)).toThrow(/channels/i);
   });
 
-  it("should throw error when target is missing", () => {
+  it("should throw when channels is empty array", () => {
     const options: PluginOptions = {
-      channel: "telegram",
+      channels: [],
     };
 
-    expect(() => loadConfig(options)).toThrow(/target/i);
+    expect(() => loadConfig(options)).toThrow(/channels/i);
   });
 
   it("should throw error when debounceMs is 0", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 0,
     };
 
@@ -70,8 +64,7 @@ describe("loadConfig", () => {
 
   it("should throw error when debounceMs is negative", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: -100,
     };
 
@@ -80,8 +73,7 @@ describe("loadConfig", () => {
 
   it("should filter unknown event names from events array", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       events: ["session.idle", "unknown.event", "session.error"],
     };
 
@@ -92,8 +84,7 @@ describe("loadConfig", () => {
 
   it("should allow empty events array (explicit opt-out)", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       events: [],
     };
 
@@ -104,36 +95,35 @@ describe("loadConfig", () => {
 
   it("should set account to undefined when not provided", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
     };
 
     const config = loadConfig(options);
 
-    expect(config.account).toBeUndefined();
+    expect(config.channels[0]!.account).toBeUndefined();
   });
 
   it("should ignore extra unknown keys in options", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       unknownKey: "should be ignored",
       anotherUnknown: 12345,
     };
 
     const config = loadConfig(options);
 
-    expect(config.channel).toBe("telegram");
-    expect(config.target).toBe("@me");
+    expect(config.channels[0]!.channel).toBe("telegram");
+    expect(config.channels[0]!.target).toBe("@me");
     expect(Object.hasOwn(config, "unknownKey")).toBe(false);
     expect(Object.hasOwn(config, "anotherUnknown")).toBe(false);
   });
 });
 
+describe("loadConfig — replies and timeouts", () => {
+
   it("should default enableReplies to true when not provided", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
     };
 
     const config = loadConfig(options);
@@ -143,8 +133,7 @@ describe("loadConfig", () => {
 
   it("should accept enableReplies: true as-is", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       enableReplies: true,
     };
 
@@ -155,9 +144,8 @@ describe("loadConfig", () => {
 
   it("should default enableReplies to true when given non-boolean value", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
-      enableReplies: "yes" as any,
+      channels: [{ channel: "telegram", target: "@me" }],
+      enableReplies: "yes" as unknown as boolean,
     };
 
     const config = loadConfig(options);
@@ -167,8 +155,7 @@ describe("loadConfig", () => {
 
   it("should default replyTimeoutMs to 120000 when not provided", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
     };
 
     const config = loadConfig(options);
@@ -178,8 +165,7 @@ describe("loadConfig", () => {
 
   it("should accept replyTimeoutMs: 60000 as-is", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       replyTimeoutMs: 60000,
     };
 
@@ -190,8 +176,7 @@ describe("loadConfig", () => {
 
   it("should default replyTimeoutMs to 120000 when given 0", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       replyTimeoutMs: 0,
     };
 
@@ -202,8 +187,7 @@ describe("loadConfig", () => {
 
   it("should default replyTimeoutMs to 120000 when given negative value", () => {
     const options: PluginOptions = {
-      channel: "telegram",
-      target: "@me",
+      channels: [{ channel: "telegram", target: "@me" }],
       replyTimeoutMs: -1,
     };
 
@@ -211,3 +195,4 @@ describe("loadConfig", () => {
 
     expect(config.replyTimeoutMs).toBe(120000);
   });
+});

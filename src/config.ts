@@ -1,5 +1,5 @@
 import type { PluginOptions } from "@opencode-ai/plugin";
-import type { NotifyOpenclawConfig, EventType } from "./types.js";
+import type { ChannelConfig, NotifyOpenclawConfig, EventType } from "./types.js";
 import { DEFAULT_DEBOUNCE_MS, DEFAULT_EVENTS, DEFAULT_REPLY_TIMEOUT_MS } from "./types.js";
 
 const VALID_EVENTS = new Set<EventType>([
@@ -10,16 +10,30 @@ const VALID_EVENTS = new Set<EventType>([
   "message.updated",
 ]);
 
+function parseChannelConfig(item: unknown, index: number): ChannelConfig {
+  if (typeof item !== "object" || item === null || Array.isArray(item)) {
+    throw new Error(`Config validation failed: channels[${index}] must be an object`);
+  }
+  const obj = item as Record<string, unknown>;
+  if (typeof obj.channel !== "string") {
+    throw new Error(`Config validation failed: channels[${index}].channel is required and must be a string`);
+  }
+  if (typeof obj.target !== "string") {
+    throw new Error(`Config validation failed: channels[${index}].target is required and must be a string`);
+  }
+  return {
+    channel: obj.channel,
+    target: obj.target,
+    account: typeof obj.account === "string" ? obj.account : undefined,
+  };
+}
+
 export function loadConfig(options: PluginOptions): NotifyOpenclawConfig {
-  // Validate channel (required string)
-  if (typeof options.channel !== "string") {
-    throw new Error("Config validation failed: channel is required and must be a string");
+  if (!Array.isArray(options.channels) || options.channels.length === 0) {
+    throw new Error("Config validation failed: channels must be a non-empty array");
   }
 
-  // Validate target (required string)
-  if (typeof options.target !== "string") {
-    throw new Error("Config validation failed: target is required and must be a string");
-  }
+  const channels = options.channels.map((item, i) => parseChannelConfig(item, i));
 
   // Validate debounceMs (optional, must be > 0 if provided)
   let debounceMs = DEFAULT_DEBOUNCE_MS;
@@ -42,9 +56,6 @@ export function loadConfig(options: PluginOptions): NotifyOpenclawConfig {
     });
   }
 
-  // Extract account (optional, string or undefined)
-  const account = typeof options.account === "string" ? options.account : undefined;
-
   // Validate enableReplies (optional, defaults to true)
   const enableReplies = typeof options?.enableReplies === "boolean" ? options.enableReplies : true;
 
@@ -55,9 +66,7 @@ export function loadConfig(options: PluginOptions): NotifyOpenclawConfig {
       : DEFAULT_REPLY_TIMEOUT_MS;
 
   return {
-    channel: options.channel,
-    target: options.target,
-    account,
+    channels,
     debounceMs,
     enableReplies,
     replyTimeoutMs,

@@ -212,9 +212,8 @@ describe("plugin entrypoint", () => {
 
   it("returns the expected hook object shape when configured", async () => {
     const hooks = await plugin(createInput([]), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
-      target: "@me",
     });
 
     expect(hooks.event).toBeFunction();
@@ -230,21 +229,20 @@ describe("plugin entrypoint", () => {
       return true;
     }) as typeof process.stderr.write;
 
-    const hooks = await plugin(createInput(calls), { target: "@me" });
+    const hooks = await plugin(createInput(calls), { channels: [] });
 
     expect(hooks).toEqual({});
     expect(calls).toHaveLength(0);
     expect(stderr).toContain("notify-openclaw");
-    expect(stderr).toContain("channel");
+    expect(stderr).toContain("channels");
   });
 
   it("routes session.idle through the debouncer and session.error immediately", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["session.idle", "session.error"],
-      target: "@me",
     });
 
     await hooks.event?.({
@@ -267,11 +265,10 @@ describe("plugin entrypoint", () => {
   it("sends permission.asked from permission.ask immediately when configured", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["permission.asked"],
       enableReplies: false,
-      target: "@me",
     });
 
     await hooks["permission.ask"]?.(
@@ -287,10 +284,9 @@ describe("plugin entrypoint", () => {
   it("routes permission.replied immediately through the event hook", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["permission.replied"],
-      target: "@me",
     });
 
     await hooks.event?.({
@@ -303,10 +299,9 @@ describe("plugin entrypoint", () => {
   it("extracts only text parts from chat.message, filters them, and sends message.updated", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["message.updated"],
-      target: "@me",
     } satisfies PluginOptions);
 
     await hooks["chat.message"]?.(
@@ -329,10 +324,9 @@ describe("plugin entrypoint", () => {
   it("filters non-question message.updated text and does not send", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["message.updated"],
-      target: "@me",
     });
 
     await hooks["chat.message"]?.(
@@ -349,10 +343,9 @@ describe("plugin entrypoint", () => {
   it("does not send permission.asked when permission.ask status is not ask", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["permission.asked"],
-      target: "@me",
     });
 
     await hooks["permission.ask"]?.(createPermission(), { status: "allow" });
@@ -363,11 +356,10 @@ describe("plugin entrypoint", () => {
   it("silently ignores excluded events", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["session.error"],
       enableReplies: false,
-      target: "@me",
     });
 
     await hooks.event?.({
@@ -409,11 +401,10 @@ describe("plugin entrypoint — two-way replies", () => {
   it("preserves the existing permission.ask behavior when replies are disabled", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["permission.asked"],
       enableReplies: false,
-      target: "@me",
     });
     const output = { status: "ask" as const };
 
@@ -429,12 +420,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
     const mockClient = createMockClient();
     const hooks = await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 500,
-      target: "@me",
     });
     const permission = createPermission();
     const output = { status: "ask" as "ask" | "allow" | "deny" };
@@ -455,12 +445,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
     const mockClient = createMockClient();
     const hooks = await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 500,
-      target: "@me",
     });
     const permission = createPermission();
     const output = { status: "ask" as "ask" | "allow" | "deny" };
@@ -481,12 +470,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
     const mockClient = createMockClient();
     const hooks = await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 500,
-      target: "@me",
     });
     const permission = createPermission();
     const output = { status: "ask" as "ask" | "allow" | "deny" };
@@ -507,12 +495,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
     const mockClient = createMockClient();
     const hooks = await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 100,
-      target: "@me",
     });
     const output = { status: "ask" as "ask" | "allow" | "deny" };
 
@@ -526,12 +513,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
     const mockClient = createMockClient();
     const hooks = await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 100,
-      target: "@me",
     });
 
     await hooks["permission.ask"]?.(createPermission(), {
@@ -562,12 +548,11 @@ describe("plugin entrypoint — two-way replies", () => {
     } as unknown as PluginInput["client"];
 
     await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 500,
-      target: "@me",
     });
 
     await sleep(50);
@@ -586,11 +571,10 @@ describe("plugin entrypoint — two-way replies", () => {
     const calls: ShellCall[] = [];
 
     await plugin(createInput(calls), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       events: ["permission.asked"],
       enableReplies: false,
-      target: "@me",
     });
 
     expect(startedReplyServers).toHaveLength(0);
@@ -602,12 +586,11 @@ describe("plugin entrypoint — two-way replies", () => {
     const mockClient = createMockClient();
 
     await plugin(createInputWithClient(calls, mockClient), {
-      channel: "telegram",
+      channels: [{ channel: "telegram", target: "@me" }],
       debounceMs: 10,
       enableReplies: true,
       events: ["permission.asked"],
       replyTimeoutMs: 500,
-      target: "@me",
     });
 
     const startedServer = startedReplyServers[startedReplyServers.length - 1];
