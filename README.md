@@ -18,31 +18,32 @@ Notifications are one-way. You can't reply through the channel. Messages are pla
 
 ## Requirements
 
-- [OpenCode](https://github.com/sst/opencode) with plugin support (`@opencode-ai/plugin >=1.0.0`)
-- The [Openclaw CLI](https://openclaw.com) installed and authenticated on your machine
-- A configured Openclaw channel (WhatsApp, Telegram, Discord, Slack, etc.)
+Before installing, make sure you have:
 
-Verify the CLI works before enabling the plugin:
-
-```bash
-openclaw message send --dry-run --channel <your-channel> --target <your-target> --message "test from openclaw"
-```
-
-If this sends a message to your device, you're ready to install.
+- **Node.js 18+** (or Bun runtime) — [nodejs.org](https://nodejs.org) / [bun.sh](https://bun.sh)
+- **OpenCode** installed and configured — [opencode.ai](https://opencode.ai)
+- **Openclaw CLI** installed and authenticated — [openclaw.com](https://openclaw.com)
+- At least one Openclaw channel configured. Verify with:
+  ```bash
+  openclaw message send --dry-run --channel <your-channel> --target <your-target> --message "test"
+  ```
+  This should exit 0 with no errors before you proceed.
 
 ## Installation
 
+### Step 1 — Install the plugin
+
 ```bash
+# With npm
 npm install opencode-notify-openclaw
-```
 
-Or with bun:
-
-```bash
+# With bun
 bun add opencode-notify-openclaw
 ```
 
-Then add the plugin to your `opencode.json`:
+### Step 2 — Add to your opencode.json
+
+Open (or create) `opencode.json` in your project directory and add the plugin to the `plugin` array:
 
 ```json
 {
@@ -55,7 +56,64 @@ Then add the plugin to your `opencode.json`:
 }
 ```
 
-The package declares `@opencode-ai/plugin` as a peer dependency, so OpenCode must already be installed.
+**To notify on multiple channels**, add the plugin tuple once per channel:
+
+```json
+{
+  "plugin": [
+    ["opencode-notify-openclaw", {
+      "channel": "whatsapp",
+      "target": "+1234567890"
+    }],
+    ["opencode-notify-openclaw", {
+      "channel": "telegram",
+      "target": "@yourhandle"
+    }]
+  ]
+}
+```
+
+**All configuration options:**
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `channel` | string | ✅ | — | Openclaw channel name (e.g. `telegram`, `whatsapp`, `discord`) |
+| `target` | string | ✅ | — | Recipient identifier — format depends on channel |
+| `account` | string | | — | Openclaw account ID, for multi-account setups |
+| `debounceMs` | number | | `3000` | Milliseconds to debounce `session.idle` events |
+| `events` | string[] | | all | Subset of events to notify on (omit to receive all) |
+
+### Step 3 — Restart OpenCode
+
+Restart OpenCode for the plugin to load. You can verify it loaded without errors by checking OpenCode's log output at startup.
+
+### Step 4 — Verify it's working
+
+Trigger a test notification by leaving your OpenCode session idle for a few seconds. You should receive a message on your configured channel.
+
+You can also test your Openclaw setup independently:
+```bash
+openclaw message send --channel <your-channel> --target <your-target> --message "opencode-notify-openclaw test 🔔"
+```
+
+## Troubleshooting
+
+**`[notify-openclaw] openclaw not found`**
+The `openclaw` binary is not on your `PATH`. Install Openclaw from [openclaw.com](https://openclaw.com) and ensure it is accessible in your shell.
+
+**No notification received after idle**
+1. Check your `channel` and `target` values match what Openclaw expects for your messaging app
+2. Run `openclaw message send --dry-run --channel <ch> --target <t> --message test` to validate your credentials
+3. Ensure the `opencode-notify-openclaw` entry appears in your `plugin` array (not at the root level)
+
+**`[notify-openclaw] openclaw exited with code 1`**
+Openclaw returned an error. Run the `openclaw message send` command manually with the same `--channel` and `--target` to see the full error output.
+
+**`[notify-openclaw] dropping message because another send is already in flight`**
+This is normal — the plugin allows only one concurrent send. The dropped message was a duplicate during a rapid burst of events.
+
+**Messages are truncated**
+Messages over 4000 characters are automatically truncated. This is by design to stay within messaging app limits.
 
 ## Configuration
 
