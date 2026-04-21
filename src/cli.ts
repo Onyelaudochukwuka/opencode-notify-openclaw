@@ -8,8 +8,6 @@ const MAX_MESSAGE_LENGTH = 4000;
 const TRUNCATION_SUFFIX = "... [truncated]";
 const CLI_TIMEOUT_MS = 10_000;
 
-let busy = false;
-
 type ShellOutputLike = {
   exitCode: number;
 };
@@ -32,7 +30,10 @@ function truncateMessage(message: string): string {
 
 function createTimeout(): Promise<symbol> {
   return new Promise((resolve) => {
-    setTimeout(() => resolve(Symbol.for("notify-openclaw.timeout")), CLI_TIMEOUT_MS);
+    setTimeout(
+      () => resolve(Symbol.for("notify-openclaw.timeout")),
+      CLI_TIMEOUT_MS,
+    );
   });
 }
 
@@ -43,13 +44,14 @@ async function runCommand(
 ): Promise<ShellOutputLike | symbol> {
   const command = (
     config.account
-      ? shell
-          .nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --account ${config.account} --message ${message}`
-      : shell
-          .nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --message ${message}`
+      ? shell.nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --account ${config.account} --message ${message}`
+      : shell.nothrow()`openclaw message send --channel ${config.channel} --target ${config.target} --message ${message}`
   ) as KillablePromise;
 
-  const result = await Promise.race<ShellOutputLike | symbol>([command, createTimeout()]);
+  const result = await Promise.race<ShellOutputLike | symbol>([
+    command,
+    createTimeout(),
+  ]);
 
   if (typeof result === "symbol") {
     command.kill?.("SIGTERM");
@@ -58,7 +60,12 @@ async function runCommand(
   return result;
 }
 
-export function createSender(config: NotifyOpenclawConfig, shell: BunShell): Sender {
+export function createSender(
+  config: NotifyOpenclawConfig,
+  shell: BunShell,
+): Sender {
+  let busy = false;
+
   return {
     async send(message: string): Promise<void> {
       if (message.trim().length === 0) {
@@ -73,7 +80,11 @@ export function createSender(config: NotifyOpenclawConfig, shell: BunShell): Sen
       busy = true;
 
       try {
-        const result = await runCommand(config, shell, truncateMessage(message));
+        const result = await runCommand(
+          config,
+          shell,
+          truncateMessage(message),
+        );
 
         if (typeof result === "symbol") {
           warn(`openclaw timed out after ${CLI_TIMEOUT_MS}ms`);
@@ -91,7 +102,8 @@ export function createSender(config: NotifyOpenclawConfig, shell: BunShell): Sen
 
         warn(`openclaw exited with code ${result.exitCode}`);
       } catch (error) {
-        const messageText = error instanceof Error ? error.message : String(error);
+        const messageText =
+          error instanceof Error ? error.message : String(error);
         warn(`openclaw invocation failed: ${messageText}`);
       } finally {
         busy = false;
