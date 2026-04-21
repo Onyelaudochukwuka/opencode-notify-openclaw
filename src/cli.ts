@@ -1,7 +1,6 @@
-import type { $ } from "bun";
-import type { NotifyOpenclawConfig } from "./types.js";
+import type { NotifyOpenclawConfig, PluginInput } from "./types.js";
 
-type BunShell = typeof $;
+type BunShell = PluginInput["$"];
 
 export type Sender = { send(message: string): Promise<void> };
 
