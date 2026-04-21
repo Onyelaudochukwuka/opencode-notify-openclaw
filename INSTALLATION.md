@@ -548,7 +548,7 @@ The glob pattern (`*.port`) means it works regardless of the process ID. If mult
 
 ### Step 3: Run the Setup Script
 
-Install the bridge poller with a single command. No clone required — the script is fetched directly from GitHub:
+Install the bridge poller with a single command. No clone required - the script is fetched directly from GitHub:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
@@ -843,7 +843,7 @@ Reply from your messaging app with `yes`. The permission should resolve in OpenC
 
 **Possible causes and fixes:**
 
-1. **`enableReplies` explicitly disabled:** Check your `opencode.json` doesn't have `"enableReplies": false`. Replies are enabled by default — only set this if you want to disable them.
+1. **`enableReplies` explicitly disabled:** Check your `opencode.json` doesn't have `"enableReplies": false`. Replies are enabled by default - only set this if you want to disable them.
 
 2. **Openclaw hook not configured:** Check `~/.openclaw/openclaw.json` for the `message:received` hook. If it's missing, add it (see [Step 2](#step-2-set-up-the-openclaw-hook)).
 
@@ -969,7 +969,7 @@ Reply from your messaging app with `yes`. The permission should resolve in OpenC
 
 ## Agent and Automation Setup
 
-This section covers running `opencode-notify-openclaw` in headless or automated environments — CI pipelines, AI agent workflows, or any context where interactive prompts are not available.
+This section covers running `opencode-notify-openclaw` in headless or automated environments - CI pipelines, AI agent workflows, or any context where interactive prompts are not available.
 
 ### Non-Interactive Installation
 
@@ -995,7 +995,7 @@ EOF
 **2. Set up the bridge poller non-interactively:**
 
 ```bash
-# No clone needed — run directly from GitHub:
+# No clone needed - run directly from GitHub:
 bash <(curl -fsSL https://raw.githubusercontent.com/Onyelaudochukwuka/opencode-notify-openclaw/main/scripts/setup-hook.sh) \
   --channel telegram --target @yourhandle
 ```
@@ -1070,13 +1070,13 @@ kill -0 $(cat /tmp/opencode-bridge-poll.pid) && echo 'poller running' || echo 'p
 
 ### Configuration Reference
 
-All plugin configuration comes from `opencode.json`. There are no environment variable overrides — every option must be set in the plugin tuple.
+All plugin configuration comes from `opencode.json`. There are no environment variable overrides - every option must be set in the plugin tuple.
 
 | Option | Type | Default | Notes |
 |--------|------|---------|-------|
 | `channel` | string | required | Openclaw channel name |
 | `target` | string | required | Recipient identifier |
-| `account` | string | — | Multi-account Openclaw setups |
+| `account` | string | - | Multi-account Openclaw setups |
 | `debounceMs` | number | `3000` | `session.idle` debounce window |
 | `events` | string[] | all | Which events trigger notifications |
 | `enableReplies` | boolean | `true` | Enable two-way bridge |
@@ -1100,7 +1100,7 @@ To stop the poller and clean up all temporary files:
 # Stop the poller
 ./scripts/setup-hook.sh --uninstall
 
-# Remove the last-seen ID file (optional — safe to leave)
+# Remove the last-seen ID file (optional - safe to leave)
 rm -f /tmp/openclaw-bridge-last-*
 
 # The bridge server port file is removed automatically when OpenCode exits.

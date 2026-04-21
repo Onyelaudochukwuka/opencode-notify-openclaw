@@ -20,8 +20,8 @@ Notifications are two-way by default. Replies from the channel are forwarded bac
 
 Before using the plugin, make sure you have:
 
-- **OpenCode** installed and configured — [opencode.ai](https://opencode.ai)
-- **Openclaw CLI** installed and authenticated — [openclaw.com](https://openclaw.com)
+- **OpenCode** installed and configured - [opencode.ai](https://opencode.ai)
+- **Openclaw CLI** installed and authenticated - [openclaw.com](https://openclaw.com)
 - At least one Openclaw channel configured. Verify with:
   ```bash
   openclaw message send --dry-run --channel <your-channel> --target <your-target> --message "test"
@@ -31,7 +31,7 @@ Before using the plugin, make sure you have:
 
 **No manual install needed.** OpenCode automatically installs npm plugins at startup. Just add the package name to your `opencode.json` and run OpenCode.
 
-### Step 1 — Add to your opencode.json
+### Step 1 - Add to your opencode.json
 
 Open (or create) `opencode.json` in your project directory and add the plugin to the `plugin` array:
 
@@ -67,17 +67,17 @@ Open (or create) `opencode.json` in your project directory and add the plugin to
 
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
-| `channel` | string | ✅ | — | Openclaw channel name (e.g. `telegram`, `whatsapp`, `discord`) |
-| `target` | string | ✅ | — | Recipient identifier — format depends on channel |
-| `account` | string | | — | Openclaw account ID, for multi-account setups |
+| `channel` | string | ✅ | - | Openclaw channel name (e.g. `telegram`, `whatsapp`, `discord`) |
+| `target` | string | ✅ | - | Recipient identifier - format depends on channel |
+| `account` | string | | - | Openclaw account ID, for multi-account setups |
 | `debounceMs` | number | | `3000` | Milliseconds to debounce `session.idle` events |
 | `events` | string[] | | all | Subset of events to notify on (omit to receive all) |
 
-### Step 2 — Restart OpenCode
+### Step 2 - Restart OpenCode
 
 Restart OpenCode for the plugin to load. You can verify it loaded without errors by checking OpenCode's log output at startup.
 
-### Step 3 — Verify it's working
+### Step 3 - Verify it's working
 
 Trigger a test notification by leaving your OpenCode session idle for a few seconds. You should receive a message on your configured channel.
 
@@ -99,7 +99,7 @@ The `openclaw` binary is not on your `PATH`. Install Openclaw from [openclaw.com
 Openclaw returned an error. Run the `openclaw message send` command manually with the same `--channel` and `--target` to see the full error output.
 
 **`[notify-openclaw] dropping message because another send is already in flight`**
-This is normal — the plugin allows only one concurrent send. The dropped message was a duplicate during a rapid burst of events.
+This is normal - the plugin allows only one concurrent send. The dropped message was a duplicate during a rapid burst of events.
 
 **Messages are truncated**
 Messages over 4000 characters are automatically truncated. This is by design to stay within messaging app limits.
@@ -113,7 +113,7 @@ session input.
 ### Prerequisites
 
 - Openclaw Gateway must be running and configured with a bidirectional channel
-- The Openclaw bridge poller must be running (install with one command — see [Openclaw Hook Setup](#openclaw-hook-setup))
+- The Openclaw bridge poller must be running (install with one command - see [Openclaw Hook Setup](#openclaw-hook-setup))
 
 ### Configuration
 
@@ -272,7 +272,7 @@ The exact `target` format depends on how your Openclaw channel is configured. Ch
 ```
 🔔 [project-id] OpenCode is waiting for your input
 ⚠️ [project-id] Error: something went wrong
-🔐 [project-id] Permission needed: file_edit — Edit config.ts (src/config.ts)
+🔐 [project-id] Permission needed: file_edit - Edit config.ts (src/config.ts)
 ✅ [project-id] Permission resolved: allow
 💬 [project-id] OpenCode asks: Which approach would you prefer?
 ```
@@ -302,7 +302,7 @@ Code blocks are stripped before checking, so ternary operators like `a ? b : c` 
 
 Socket.dev flags this package with a **"Network access"** alert. This is expected and intentional.
 
-When `enableReplies` is enabled (the default), the plugin starts a local HTTP server bound strictly to `127.0.0.1` — never `0.0.0.0`, never exposed to the network. Its sole purpose is to receive forwarded replies from the Openclaw bridge poller running on the same machine. The port is chosen randomly by the OS and written to `/tmp/opencode-notify-openclaw-{pid}.port` for the poller to discover.
+When `enableReplies` is enabled (the default), the plugin starts a local HTTP server bound strictly to `127.0.0.1` - never `0.0.0.0`, never exposed to the network. Its sole purpose is to receive forwarded replies from the Openclaw bridge poller running on the same machine. The port is chosen randomly by the OS and written to `/tmp/opencode-notify-openclaw-{pid}.port` for the poller to discover.
 
 No data is sent to any external server by this plugin. All outbound communication goes through the `openclaw` CLI, which you install and control separately.
 
