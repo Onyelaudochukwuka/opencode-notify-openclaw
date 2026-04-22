@@ -61,11 +61,13 @@ async function sendToChannel(
   channel: ChannelConfig,
   shell: BunShell,
   message: string,
+  warn: (msg: string) => void,
 ): Promise<void> {
   try {
     const result = await runCommand(channel, shell, message);
 
     if (typeof result === "symbol") {
+      warn(`openclaw timed out after ${CLI_TIMEOUT_MS}ms – process killed (channel: ${channel.channel})`);
       return;
     }
 
@@ -74,14 +76,18 @@ async function sendToChannel(
     }
 
     if (result.exitCode === 127) {
+      warn(`openclaw not found – is it installed and on your PATH? (channel: ${channel.channel})`);
       return;
     }
 
-  } catch {
+    warn(`openclaw exited with code ${result.exitCode} (channel: ${channel.channel})`);
+    return;
+  } catch (error) {
+    warn(`openclaw invocation failed: ${error instanceof Error ? error.message : String(error)} (channel: ${channel.channel})`);
   }
 }
 
-export function createSender(channels: ChannelConfig[], shell: BunShell): Sender {
+export function createSender(channels: ChannelConfig[], shell: BunShell, warn: (msg: string) => void): Sender {
   let busy = false;
 
   return {
@@ -91,6 +97,7 @@ export function createSender(channels: ChannelConfig[], shell: BunShell): Sender
       }
 
       if (busy) {
+        warn("dropping message because another send is already in flight");
         return;
       }
 
@@ -98,7 +105,7 @@ export function createSender(channels: ChannelConfig[], shell: BunShell): Sender
 
       try {
         await Promise.all(
-          channels.map((ch) => sendToChannel(ch, shell, truncateMessage(message))),
+          channels.map((ch) => sendToChannel(ch, shell, truncateMessage(message), warn)),
         );
       } finally {
         busy = false;

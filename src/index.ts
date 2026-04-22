@@ -57,7 +57,7 @@ const plugin: Plugin = async (input, options) => {
     return {};
   }
 
-  const sender = createSender(config.channels, input.$);
+  const sender = createSender(config.channels, input.$, warn);
   const enabledEvents = new Set<EventType>(config.events);
   const projectId = input.project.id;
   let permissionTracker: ReturnType<typeof createPermissionTracker> | null = null;
