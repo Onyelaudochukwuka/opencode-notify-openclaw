@@ -128,11 +128,12 @@ function createMockShell(...behaviors: Behavior[]): { shell: BunShell; invocatio
   };
 }
 
-function getWarnings(writeSpy: { mock: { calls: Array<[unknown, ...unknown[]]> } }) {
-  return writeSpy.mock.calls.map(([chunk]) => String(chunk)).join("");
-}
+let warnMessages: string[];
+let warnMock: (msg: string) => void;
 
 beforeEach(() => {
+  warnMessages = [];
+  warnMock = (msg: string) => { warnMessages.push(msg); };
   mock.restore();
   vi.useRealTimers();
 });
@@ -145,7 +146,7 @@ afterEach(() => {
 describe("createSender", () => {
   it("sends successfully with required flags", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send("hello world");
 
@@ -168,7 +169,7 @@ describe("createSender", () => {
 
   it("includes --account when configured", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender([{ ...BASE_CHANNEL, account: "primary" }], shell);
+    const sender = createSender([{ ...BASE_CHANNEL, account: "primary" }], shell, warnMock);
 
     await sender.send("hello world");
     expect(invocations[0]?.args).toEqual([
@@ -191,7 +192,7 @@ describe("createSender", () => {
 
   it("omits --account when not configured", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send("hello world");
 
@@ -201,7 +202,7 @@ describe("createSender", () => {
   it("passes shell metacharacters literally", async () => {
     const message = "$(rm -rf /)";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(message);
 
@@ -212,7 +213,7 @@ describe("createSender", () => {
   it("passes backticks literally", async () => {
     const message = "`whoami`";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(message);
 
@@ -222,7 +223,7 @@ describe("createSender", () => {
   it("passes single quotes literally", async () => {
     const message = "it's literal";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(message);
 
@@ -232,7 +233,7 @@ describe("createSender", () => {
   it("passes double quotes literally", async () => {
     const message = 'say "hello"';
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(message);
 
@@ -242,53 +243,51 @@ describe("createSender", () => {
   it("passes newlines through unchanged", async () => {
     const message = "line one\nline two";
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(message);
 
     expect(invocations[0]?.args.at(-4)).toBe(message);
   });
 
-  it("resolves on exit code 1 without logging", async () => {
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
-
+  it("warns on non-zero exit code", async () => {
     const { shell } = createMockShell({ type: "resolve", exitCode: 1 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await expect(sender.send("hello")).resolves.toBeUndefined();
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(1);
+    expect(warnMessages[0]).toContain("exited with code 1");
   });
 
-  it("silently ignores openclaw not found", async () => {
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
-
+  it("warns when openclaw is not found", async () => {
     const { shell } = createMockShell({ type: "resolve", exitCode: 127 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await expect(sender.send("hello")).resolves.toBeUndefined();
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(1);
+    expect(warnMessages[0]).toContain("openclaw not found");
   });
 
-  it("times out silently and kills the command", async () => {
+  it("warns and kills command on timeout", async () => {
     vi.useFakeTimers();
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
 
     const shellState = createMockShell({ type: "hang" });
     const { shell } = shellState;
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
     const sendPromise = sender.send("hello");
 
     vi.advanceTimersByTime(10_000);
     await sendPromise;
 
     expect(shellState.killCalls).toBe(1);
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(1);
+    expect(warnMessages[0]).toMatch(/timed? ?out/i);
   });
 
   it("truncates messages longer than 4000 characters", async () => {
     const longMessage = "a".repeat(4001);
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send(longMessage);
 
@@ -299,16 +298,14 @@ describe("createSender", () => {
 
   it("skips empty or whitespace-only messages", async () => {
     const { shell, invocations } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send("   \n\t  ");
 
     expect(invocations).toHaveLength(0);
   });
 
-  it("drops concurrent sends silently", async () => {
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
-
+  it("warns when dropping concurrent sends", async () => {
     let resolveFirst: (() => void) | undefined;
     const command = new Promise<MockResult>((resolve) => {
       resolveFirst = () => resolve(createMockResult(0));
@@ -343,7 +340,7 @@ describe("createSender", () => {
       },
     ) as unknown as BunShell;
 
-    const sender = createSender(BASE_CHANNELS, shellTag);
+    const sender = createSender(BASE_CHANNELS, shellTag, warnMock);
 
     const firstSend = sender.send("first");
     const secondSend = sender.send("second");
@@ -353,23 +350,20 @@ describe("createSender", () => {
     await Promise.all([firstSend, secondSend]);
 
     expect(invocations).toHaveLength(1);
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(1);
+    expect(warnMessages[0]).toContain("dropping");
   });
 
-  it("produces no stderr output on successful send", async () => {
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
-
+  it("produces no warning on successful send", async () => {
     const { shell } = createMockShell({ type: "resolve", exitCode: 0 });
-    const sender = createSender(BASE_CHANNELS, shell);
+    const sender = createSender(BASE_CHANNELS, shell, warnMock);
 
     await sender.send("hello world");
 
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(0);
   });
 
-  it("resolves on invocation failure without logging", async () => {
-    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
-
+  it("warns on invocation failure", async () => {
     // Create a shell mock that rejects (throws) instead of resolving
     const throwingShell = Object.assign(
       (_strings: TemplateStringsArray, ..._expressions: unknown[]) => {
@@ -387,9 +381,10 @@ describe("createSender", () => {
       },
     ) as unknown as BunShell;
 
-    const sender = createSender(BASE_CHANNELS, throwingShell);
+    const sender = createSender(BASE_CHANNELS, throwingShell, warnMock);
 
     await expect(sender.send("hello")).resolves.toBeUndefined();
-    expect(getWarnings(writeSpy)).toBe("");
+    expect(warnMessages).toHaveLength(1);
+    expect(warnMessages[0]).toContain("ENOENT");
   });
 });
