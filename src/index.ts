@@ -20,9 +20,9 @@ function hasOptions(
   return options !== undefined && Object.keys(options).length > 0;
 }
 
-function extractText(parts: Array<{ type?: string; text?: string }>): string {
+function extractText(parts: Array<{ type?: string; text?: string; synthetic?: boolean; ignored?: boolean }>): string {
   return parts
-    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .filter((part) => part.type === "text" && typeof part.text === "string" && part.synthetic !== true && part.ignored !== true)
     .map((part) => part.text)
     .join("")
     .trim();
@@ -200,7 +200,7 @@ const plugin: Plugin = async (input, options) => {
       }
 
       const text = extractText(
-        output.parts as Array<{ type?: string; text?: string }>,
+        output.parts as Array<{ type?: string; text?: string; synthetic?: boolean; ignored?: boolean }>,
       );
       if (!text || !shouldNotify(text)) {
         return;

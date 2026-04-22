@@ -62,8 +62,7 @@ function formatPermissionReplied(payload: PermissionRepliedPayload, projectId: s
 }
 
 function formatMessageUpdated(payload: MessageUpdatedPayload, projectId: string): string {
-  const textTruncated = truncate(payload.text, 200);
-  return `💬 [${projectId}] OpenCode asks: ${textTruncated}`;
+  return `💬 [${projectId}] OpenCode asks: ${payload.text}`;
 }
 
 export function formatNotification(

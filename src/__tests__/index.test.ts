@@ -340,6 +340,105 @@ describe("plugin entrypoint", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("does not send message.updated when text part has synthetic: true", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channels: [{ channel: "telegram", target: "@me" }],
+      debounceMs: 10,
+      events: ["message.updated"],
+    } satisfies PluginOptions);
+
+    await hooks["chat.message"]?.(
+      { messageID: "msg-1", sessionID: "sess-1" },
+      {
+        message: createUserMessage(),
+        parts: [createTextPart("Should I use X?", { synthetic: true })],
+      },
+    );
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not send message.updated when text part has ignored: true", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channels: [{ channel: "telegram", target: "@me" }],
+      debounceMs: 10,
+      events: ["message.updated"],
+    } satisfies PluginOptions);
+
+    await hooks["chat.message"]?.(
+      { messageID: "msg-1", sessionID: "sess-1" },
+      {
+        message: createUserMessage(),
+        parts: [createTextPart("Should I use X?", { ignored: true })],
+      },
+    );
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not send message.updated when text part has both synthetic: true and ignored: true", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channels: [{ channel: "telegram", target: "@me" }],
+      debounceMs: 10,
+      events: ["message.updated"],
+    } satisfies PluginOptions);
+
+    await hooks["chat.message"]?.(
+      { messageID: "msg-1", sessionID: "sess-1" },
+      {
+        message: createUserMessage(),
+        parts: [createTextPart("Should I use X?", { synthetic: true, ignored: true })],
+      },
+    );
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("sends message.updated when text part has synthetic: false and ignored: false", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channels: [{ channel: "telegram", target: "@me" }],
+      debounceMs: 10,
+      events: ["message.updated"],
+    } satisfies PluginOptions);
+
+    await hooks["chat.message"]?.(
+      { messageID: "msg-1", sessionID: "sess-1" },
+      {
+        message: createUserMessage(),
+        parts: [createTextPart("Should I use X?", { synthetic: false, ignored: false })],
+      },
+    );
+
+    expect(getMessages(calls)).toEqual([
+      "💬 [project-123] OpenCode asks: Should I use X?",
+    ]);
+  });
+
+  it("sends message.updated when text part has no synthetic/ignored fields (normal text)", async () => {
+    const calls: ShellCall[] = [];
+    const hooks = await plugin(createInput(calls), {
+      channels: [{ channel: "telegram", target: "@me" }],
+      debounceMs: 10,
+      events: ["message.updated"],
+    } satisfies PluginOptions);
+
+    await hooks["chat.message"]?.(
+      { messageID: "msg-1", sessionID: "sess-1" },
+      {
+        message: createUserMessage(),
+        parts: [createTextPart("Should I use X?")],
+      },
+    );
+
+    expect(getMessages(calls)).toEqual([
+      "💬 [project-123] OpenCode asks: Should I use X?",
+    ]);
+  });
+
   it("does not send permission.asked when permission.ask status is not ask", async () => {
     const calls: ShellCall[] = [];
     const hooks = await plugin(createInput(calls), {

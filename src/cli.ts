@@ -16,9 +16,6 @@ type KillablePromise = Promise<ShellOutputLike> & {
   kill?(signal?: number | NodeJS.Signals): void;
 };
 
-function warn(message: string): void {
-  process.stderr.write(`[notify-openclaw] ${message}\n`);
-}
 
 function truncateMessage(message: string): string {
   if (message.length <= MAX_MESSAGE_LENGTH) {
@@ -44,8 +41,8 @@ async function runCommand(
 ): Promise<ShellOutputLike | symbol> {
   const command = (
     channel.account
-      ? shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --account ${channel.account} --message ${message}`
-      : shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --message ${message}`
+      ? shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --account ${channel.account} --message ${message} > /dev/null 2>&1`
+      : shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --message ${message} > /dev/null 2>&1`
   ) as KillablePromise;
 
   const result = await Promise.race<ShellOutputLike | symbol>([
@@ -69,7 +66,6 @@ async function sendToChannel(
     const result = await runCommand(channel, shell, message);
 
     if (typeof result === "symbol") {
-      warn(`openclaw timed out after ${CLI_TIMEOUT_MS}ms (channel: ${channel.channel})`);
       return;
     }
 
@@ -78,14 +74,10 @@ async function sendToChannel(
     }
 
     if (result.exitCode === 127) {
-      warn("openclaw not found");
       return;
     }
 
-    warn(`openclaw exited with code ${result.exitCode} (channel: ${channel.channel})`);
-  } catch (error) {
-    const messageText = error instanceof Error ? error.message : String(error);
-    warn(`openclaw invocation failed (channel: ${channel.channel}): ${messageText}`);
+  } catch {
   }
 }
 
@@ -99,7 +91,6 @@ export function createSender(channels: ChannelConfig[], shell: BunShell): Sender
       }
 
       if (busy) {
-        warn("dropping message because another send is already in flight");
         return;
       }
 
