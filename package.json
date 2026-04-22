@@ -1,6 +1,6 @@
 {
   "name": "opencode-notify-openclaw",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "OpenCode plugin that sends notifications via Openclaw to any messaging channel",
   "type": "module",
   "main": "./dist/index.js",
