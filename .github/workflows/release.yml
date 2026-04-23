@@ -37,12 +37,19 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org/"
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install deps
         # if monorepo: set working-directory: packages/opencode-notify-openclaw
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: npm run build --if-present
+        run: bun run build
+
+      - name: Run Tests
+        run: bun test
 
       - name: Publish
         # if monorepo: add working-directory here too
