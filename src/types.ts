@@ -31,6 +31,6 @@ export const DEFAULT_EVENTS: EventType[] = [
   "message.updated",
 ];
 
-export const DEFAULT_DEBOUNCE_MS = 3000;
+export const DEFAULT_DEBOUNCE_MS = 3000; // 30 seconds
 
-export const DEFAULT_REPLY_TIMEOUT_MS = 120000;
+export const DEFAULT_REPLY_TIMEOUT_MS = 120000; // 2 minutes
