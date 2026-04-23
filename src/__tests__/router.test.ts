@@ -21,7 +21,9 @@ function createMockClient(sessions: Session[]) {
   } as unknown as PluginInput["client"];
 }
 
-function createMockPermissionTracker(resolvePendingReturn: PendingResult | null = null) {
+function createMockPermissionTracker(
+  resolvePendingReturn: PendingResult | null = null,
+) {
   return {
     trackPermission: mock(() => {}),
     resolvePending: mock(() => resolvePendingReturn),
@@ -59,7 +61,11 @@ describe("createReplyRouter", () => {
       response: "always",
       sessionID: "sess-1",
     });
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     await router.handleReply("always");
 
@@ -74,7 +80,11 @@ describe("createReplyRouter", () => {
       response: "reject",
       sessionID: "sess-1",
     });
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     await router.handleReply("no");
 
@@ -85,7 +95,11 @@ describe("createReplyRouter", () => {
   it("falls through permission keywords with no pending request to free text", async () => {
     const client = createMockClient([createSession("sess-1", 100)]);
     const permissionTracker = createMockPermissionTracker(null);
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     const result = await router.handleReply("yes");
 
@@ -97,13 +111,18 @@ describe("createReplyRouter", () => {
     expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: "sess-1" },
       body: { parts: [{ type: "text", text: "yes" }] },
+      throwOnError: true,
     });
   });
 
   it("sends free text replies with promptAsync", async () => {
     const client = createMockClient([createSession("sess-1", 100)]);
     const permissionTracker = createMockPermissionTracker();
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     const result = await router.handleReply("hello router");
 
@@ -115,6 +134,7 @@ describe("createReplyRouter", () => {
     expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: "sess-1" },
       body: { parts: [{ type: "text", text: "hello router" }] },
+      throwOnError: true,
     });
   });
 
@@ -125,13 +145,18 @@ describe("createReplyRouter", () => {
       createSession("middle", 200),
     ]);
     const permissionTracker = createMockPermissionTracker();
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     await router.handleReply("route me");
 
     expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: "newest" },
       body: { parts: [{ type: "text", text: "route me" }] },
+      throwOnError: true,
     });
   });
 
@@ -154,7 +179,11 @@ describe("createReplyRouter", () => {
   it("returns empty-input for blank replies", async () => {
     const client = createMockClient([createSession("sess-1", 100)]);
     const permissionTracker = createMockPermissionTracker();
-    const router = createReplyRouter({ client, permissionTracker, warn: mock(() => {}) });
+    const router = createReplyRouter({
+      client,
+      permissionTracker,
+      warn: mock(() => {}),
+    });
 
     const result = await router.handleReply("   ");
 

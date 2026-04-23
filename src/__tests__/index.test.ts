@@ -66,7 +66,9 @@ function createInput(calls: ShellCall[]): PluginInput {
 
 function createMockClient() {
   return {
-    postSessionIdPermissionsPermissionId: mock(() => Promise.resolve({ data: undefined })),
+    postSessionIdPermissionsPermissionId: mock(() =>
+      Promise.resolve({ data: undefined }),
+    ),
     session: {
       list: mock(() => Promise.resolve({ data: [] })),
       promptAsync: mock(() => Promise.resolve({ data: undefined })),
@@ -106,7 +108,10 @@ function createUserMessage(overrides: Partial<UserMessage> = {}): UserMessage {
   };
 }
 
-function createTextPart(text: string, overrides: Partial<TextPart> = {}): TextPart {
+function createTextPart(
+  text: string,
+  overrides: Partial<TextPart> = {},
+): TextPart {
   return {
     id: "text-part-1",
     messageID: "msg-1",
@@ -144,7 +149,10 @@ function createSessionIdleEvent(sessionID = "sess-1"): EventSessionIdle {
   };
 }
 
-function createSessionErrorEvent(message: string, sessionID = "sess-1"): EventSessionError {
+function createSessionErrorEvent(
+  message: string,
+  sessionID = "sess-1",
+): EventSessionError {
   return {
     properties: {
       error: { data: { message }, name: "UnknownError" },
@@ -154,7 +162,10 @@ function createSessionErrorEvent(message: string, sessionID = "sess-1"): EventSe
   };
 }
 
-function createPermissionRepliedEvent(response: string, sessionID = "sess-1"): EventPermissionReplied {
+function createPermissionRepliedEvent(
+  response: string,
+  sessionID = "sess-1",
+): EventPermissionReplied {
   return {
     properties: { permissionID: "perm-1", response, sessionID },
     type: "permission.replied",
@@ -162,7 +173,9 @@ function createPermissionRepliedEvent(response: string, sessionID = "sess-1"): E
 }
 
 function getMessages(calls: ShellCall[]): string[] {
-  return calls.map((call) => String(call.expressions[call.expressions.length - 1]));
+  return calls.map((call) =>
+    String(call.expressions[call.expressions.length - 1]),
+  );
 }
 
 function sleep(ms: number): Promise<void> {
@@ -259,7 +272,9 @@ describe("plugin entrypoint", () => {
 
     await sleep(25);
 
-    expect(getMessages(calls)).toContain("🔔 [project-123] OpenCode is waiting for your input");
+    expect(getMessages(calls)).toContain(
+      "🔔 [project-123] OpenCode is waiting for your input",
+    );
   });
 
   it("sends permission.asked from permission.ask immediately when configured", async () => {
@@ -271,10 +286,7 @@ describe("plugin entrypoint", () => {
       enableReplies: false,
     });
 
-    await hooks["permission.ask"]?.(
-      createPermission(),
-      { status: "ask" },
-    );
+    await hooks["permission.ask"]?.(createPermission(), { status: "ask" });
 
     expect(getMessages(calls)).toEqual([
       "🔐 [project-123] Permission needed: bash — Execute shell command",
@@ -293,7 +305,9 @@ describe("plugin entrypoint", () => {
       event: createPermissionRepliedEvent("allow"),
     });
 
-    expect(getMessages(calls)).toEqual(["✅ [project-123] Permission resolved: allow"]);
+    expect(getMessages(calls)).toEqual([
+      "✅ [project-123] Permission resolved: allow",
+    ]);
   });
 
   it("extracts only text parts from chat.message, filters them, and sends message.updated", async () => {
@@ -310,7 +324,11 @@ describe("plugin entrypoint", () => {
         message: createUserMessage(),
         parts: [
           createTextPart("I checked the code.", { id: "part-1" }),
-          createToolPart({ id: "part-2", messageID: "msg-1", sessionID: "sess-1" }),
+          createToolPart({
+            id: "part-2",
+            messageID: "msg-1",
+            sessionID: "sess-1",
+          }),
           createTextPart(" Which file should I modify?", { id: "part-3" }),
         ],
       },
@@ -390,7 +408,9 @@ describe("plugin entrypoint", () => {
       { messageID: "msg-1", sessionID: "sess-1" },
       {
         message: createUserMessage(),
-        parts: [createTextPart("Should I use X?", { synthetic: true, ignored: true })],
+        parts: [
+          createTextPart("Should I use X?", { synthetic: true, ignored: true }),
+        ],
       },
     );
 
@@ -409,7 +429,12 @@ describe("plugin entrypoint", () => {
       { messageID: "msg-1", sessionID: "sess-1" },
       {
         message: createUserMessage(),
-        parts: [createTextPart("Should I use X?", { synthetic: false, ignored: false })],
+        parts: [
+          createTextPart("Should I use X?", {
+            synthetic: false,
+            ignored: false,
+          }),
+        ],
       },
     );
 
@@ -464,15 +489,14 @@ describe("plugin entrypoint", () => {
     await hooks.event?.({
       event: createSessionIdleEvent(),
     });
-    await hooks["permission.ask"]?.(
-      createPermission(),
-      { status: "ask" },
-    );
+    await hooks["permission.ask"]?.(createPermission(), { status: "ask" });
     await hooks["chat.message"]?.(
       { messageID: "msg-1", sessionID: "sess-1" },
       {
         message: createUserMessage(),
-        parts: [createTextPart("Which file should I modify?", { id: "part-1" })],
+        parts: [
+          createTextPart("Which file should I modify?", { id: "part-1" }),
+        ],
       },
     );
 
@@ -534,7 +558,9 @@ describe("plugin entrypoint — two-way replies", () => {
     await hookPromise;
 
     expect(output.status).toBe("allow");
-    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+    expect(
+      mockClient.postSessionIdPermissionsPermissionId,
+    ).toHaveBeenCalledWith({
       path: { id: "sess-1", permissionID: "perm-1" },
       body: { response: "once" },
     });
@@ -559,7 +585,9 @@ describe("plugin entrypoint — two-way replies", () => {
     await hookPromise;
 
     expect(output.status).toBe("allow");
-    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+    expect(
+      mockClient.postSessionIdPermissionsPermissionId,
+    ).toHaveBeenCalledWith({
       path: { id: "sess-1", permissionID: "perm-1" },
       body: { response: "always" },
     });
@@ -584,7 +612,9 @@ describe("plugin entrypoint — two-way replies", () => {
     await hookPromise;
 
     expect(output.status).toBe("deny");
-    expect(mockClient.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
+    expect(
+      mockClient.postSessionIdPermissionsPermissionId,
+    ).toHaveBeenCalledWith({
       path: { id: "sess-1", permissionID: "perm-1" },
       body: { response: "reject" },
     });
@@ -605,7 +635,9 @@ describe("plugin entrypoint — two-way replies", () => {
     await hooks["permission.ask"]?.(createPermission(), output);
 
     expect(output.status).toBe("ask");
-    expect(mockClient.postSessionIdPermissionsPermissionId).not.toHaveBeenCalled();
+    expect(
+      mockClient.postSessionIdPermissionsPermissionId,
+    ).not.toHaveBeenCalled();
   });
 
   it("adds reply hints to permission notifications when replies are enabled", async () => {
@@ -639,7 +671,9 @@ describe("plugin entrypoint — two-way replies", () => {
     );
     const promptAsync = mock(() => Promise.resolve({ data: undefined }));
     const mockClient = {
-      postSessionIdPermissionsPermissionId: mock(() => Promise.resolve({ data: undefined })),
+      postSessionIdPermissionsPermissionId: mock(() =>
+        Promise.resolve({ data: undefined }),
+      ),
       session: {
         list: sessionList,
         promptAsync,
@@ -663,6 +697,7 @@ describe("plugin entrypoint — two-way replies", () => {
       body: {
         parts: [{ type: "text", text: "please switch to the main branch" }],
       },
+      throwOnError: true,
     });
   });
 
