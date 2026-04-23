@@ -20,7 +20,11 @@ function getMostRecentSession(sessions: Session[]): Session | null {
     return null;
   }
 
-  return [...sessions].sort((left, right) => right.time.updated - left.time.updated)[0] ?? null;
+  return (
+    [...sessions].sort(
+      (left, right) => right.time.updated - left.time.updated,
+    )[0] ?? null
+  );
 }
 
 function getErrorMessage(error: unknown): string {
@@ -47,6 +51,7 @@ async function sendFreeText(
       body: {
         parts: [{ type: "text", text }],
       },
+      throwOnError: true,
     });
 
     return { ok: true, action: "freetext-sent" };

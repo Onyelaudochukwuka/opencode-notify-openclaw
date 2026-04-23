@@ -1,12 +1,13 @@
 import type { Hooks, Plugin } from "@opencode-ai/plugin";
+import type * as sdk from "@opencode-ai/sdk";
 import { createSender } from "./cli.js";
 import { loadConfig } from "./config.js";
 import { createDebouncer } from "./debounce.js";
 import { shouldNotify } from "./filter.js";
 import { formatNotification } from "./format.js";
 import { createPermissionTracker } from "./permissions.js";
-import { createReplyRouter } from "./router.js";
 import type { ReplyRouter } from "./router.js";
+import { createReplyRouter } from "./router.js";
 import { createReplyServer } from "./server.js";
 import type { EventType, NotifyOpenclawConfig } from "./types.js";
 
@@ -20,9 +21,15 @@ function hasOptions(
   return options !== undefined && Object.keys(options).length > 0;
 }
 
-function extractText(parts: Array<{ type?: string; text?: string; synthetic?: boolean; ignored?: boolean }>): string {
+const isText = (part: sdk.Part): part is sdk.TextPart =>
+  part.type === "text" &&
+  typeof part.text === "string" &&
+  part.synthetic !== true &&
+  part.ignored !== true;
+
+function extractText(parts: sdk.Part[]): string {
   return parts
-    .filter((part) => part.type === "text" && typeof part.text === "string" && part.synthetic !== true && part.ignored !== true)
+    .filter(isText)
     .map((part) => part.text)
     .join("")
     .trim();
@@ -60,7 +67,8 @@ const plugin: Plugin = async (input, options) => {
   const sender = createSender(config.channels, input.$, warn);
   const enabledEvents = new Set<EventType>(config.events);
   const projectId = input.project.id;
-  let permissionTracker: ReturnType<typeof createPermissionTracker> | null = null;
+  let permissionTracker: ReturnType<typeof createPermissionTracker> | null =
+    null;
   let replyRouter: ReplyRouter | null = null;
   let stopReplyServer: (() => void) | null = null;
 
@@ -155,7 +163,7 @@ const plugin: Plugin = async (input, options) => {
       }
 
       if (config.enableReplies) {
-        permissionTracker!.trackPermission(permission.sessionID, permission.id);
+        permissionTracker?.trackPermission(permission.sessionID, permission.id);
 
         const notificationMessage = formatNotification(
           "permission.asked",
@@ -168,13 +176,13 @@ const plugin: Plugin = async (input, options) => {
           await sender.send(notificationMessage);
         }
 
-        const result = await permissionTracker!.awaitReply(
+        const result = await permissionTracker?.awaitReply(
           permission.sessionID,
           permission.id,
           config.replyTimeoutMs,
         );
 
-        if (result !== null) {
+        if (result) {
           output.status = result.response === "reject" ? "deny" : "allow";
 
           try {
@@ -199,9 +207,7 @@ const plugin: Plugin = async (input, options) => {
         return;
       }
 
-      const text = extractText(
-        output.parts as Array<{ type?: string; text?: string; synthetic?: boolean; ignored?: boolean }>,
-      );
+      const text = extractText(output.parts);
       if (!text || !shouldNotify(text)) {
         return;
       }
