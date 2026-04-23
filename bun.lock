@@ -4,8 +4,10 @@
   "workspaces": {
     "": {
       "name": "opencode-notify-openclaw",
-      "devDependencies": {
+      "dependencies": {
         "@opencode-ai/plugin": "^1.14.19",
+      },
+      "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5.8.0",
       },

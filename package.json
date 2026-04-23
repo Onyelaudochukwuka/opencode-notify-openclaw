@@ -1,6 +1,6 @@
 {
   "name": "opencode-notify-openclaw",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "OpenCode plugin that sends notifications via Openclaw to any messaging channel",
   "type": "module",
   "main": "./dist/index.js",
@@ -39,8 +39,10 @@
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.0.0"
   },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.14.19"
+  },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.14.19",
     "@types/bun": "latest",
     "typescript": "^5.8.0"
   }

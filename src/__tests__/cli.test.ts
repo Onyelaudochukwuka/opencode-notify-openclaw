@@ -24,6 +24,7 @@ type MockResult = {
 
 type MockCommand = Promise<MockResult> & {
   kill(signal?: number | NodeJS.Signals): void;
+  quiet(): MockCommand;
 };
 
 type Behavior =
@@ -106,6 +107,7 @@ function createMockShell(...behaviors: Behavior[]): { shell: BunShell; invocatio
           resolveCommand?.(createMockResult(143));
         }
       };
+      command.quiet = () => command;
 
       return command;
     },
@@ -161,9 +163,6 @@ describe("createSender", () => {
       "@me",
       "--message",
       "hello world",
-      ">",
-      "/dev/null",
-      "2>&1",
     ]);
   });
 
@@ -184,9 +183,6 @@ describe("createSender", () => {
       "primary",
       "--message",
       "hello world",
-      ">",
-      "/dev/null",
-      "2>&1",
     ]);
   });
 
@@ -207,7 +203,7 @@ describe("createSender", () => {
     await sender.send(message);
 
     expect(invocations[0]?.expressions).toContain(message);
-    expect(invocations[0]?.args.at(-4)).toBe(message);
+    expect(invocations[0]?.args.at(-1)).toBe(message);
   });
 
   it("passes backticks literally", async () => {
@@ -227,7 +223,7 @@ describe("createSender", () => {
 
     await sender.send(message);
 
-    expect(invocations[0]?.args.at(-4)).toBe(message);
+    expect(invocations[0]?.args.at(-1)).toBe(message);
   });
 
   it("passes double quotes literally", async () => {
@@ -237,7 +233,7 @@ describe("createSender", () => {
 
     await sender.send(message);
 
-    expect(invocations[0]?.args.at(-4)).toBe(message);
+    expect(invocations[0]?.args.at(-1)).toBe(message);
   });
 
   it("passes newlines through unchanged", async () => {
@@ -247,7 +243,7 @@ describe("createSender", () => {
 
     await sender.send(message);
 
-    expect(invocations[0]?.args.at(-4)).toBe(message);
+    expect(invocations[0]?.args.at(-1)).toBe(message);
   });
 
   it("warns on non-zero exit code", async () => {
@@ -291,7 +287,7 @@ describe("createSender", () => {
 
     await sender.send(longMessage);
 
-    const sentMessage = invocations[0]?.args.at(-4);
+    const sentMessage = invocations[0]?.args.at(-1);
     expect(sentMessage?.endsWith("... [truncated]")).toBe(true);
     expect(sentMessage).toHaveLength(4000 + "... [truncated]".length);
   });
@@ -311,6 +307,7 @@ describe("createSender", () => {
       resolveFirst = () => resolve(createMockResult(0));
     }) as MockCommand;
     command.kill = () => {};
+    command.quiet = () => command;
 
     const invocations: Invocation[] = [];
     const shellTag = Object.assign(
@@ -369,6 +366,7 @@ describe("createSender", () => {
       (_strings: TemplateStringsArray, ..._expressions: unknown[]) => {
         const command = Promise.reject(new Error("spawn ENOENT")) as unknown as MockCommand;
         command.kill = () => {};
+        command.quiet = () => command;
         return command;
       },
       {

@@ -41,8 +41,8 @@ async function runCommand(
 ): Promise<ShellOutputLike | symbol> {
   const command = (
     channel.account
-      ? shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --account ${channel.account} --message ${message} > /dev/null 2>&1`
-      : shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --message ${message} > /dev/null 2>&1`
+      ? shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --account ${channel.account} --message ${message}`.quiet()
+      : shell.nothrow()`openclaw message send --channel ${channel.channel} --target ${channel.target} --message ${message}`.quiet()
   ) as KillablePromise;
 
   const result = await Promise.race<ShellOutputLike | symbol>([

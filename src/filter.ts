@@ -1,8 +1,10 @@
 // Regex patterns compiled at module level for performance
-const PROMPT_PATTERNS = /please\s+(choose|select|confirm|decide|let me know|advise|specify)|which\s+(option|approach|file|method|way|one)|what\s+do\s+you\s+(think|prefer|want|suggest|recommend)|should\s+i\s+|would\s+you\s+(like|prefer|want)|do\s+you\s+want|let\s+me\s+know|your\s+(input|decision|preference|choice)|confirm\s+before|approve\s+before|need\s+your/i;
+const PROMPT_PATTERNS =
+  /please\s+(choose|select|confirm|decide|let me know|advise|specify)|which\s+(option|approach|file|method|way|one)|what\s+do\s+you\s+(think|prefer|want|suggest|recommend)|should\s+i\s+|would\s+you\s+(like|prefer|want)|do\s+you\s+want|let\s+me\s+know|your\s+(input|decision|preference|choice)|confirm\s+before|approve\s+before|need\s+your/i;
 
 // Question words at sentence start (after period, exclamation, or at beginning)
-const QUESTION_WORD = /(?:^|[.!]\s+)(What|Which|How|Where|When|Why|Can\s+you|Could\s+you|Should\s+I|Would\s+you|Do\s+you|Does\s+it|Is\s+it|Are\s+you|Will\s+you)\b/i;
+const QUESTION_WORD =
+  /(?:^|[.!]\s+)(What|Which|How|Where|When|Why|Can\s+you|Could\s+you|Should\s+I|Would\s+you|Do\s+you|Does\s+it|Is\s+it|Are\s+you|Will\s+you)\b/i;
 
 /**
  * Aggressive question/pause detection filter for chat messages.
