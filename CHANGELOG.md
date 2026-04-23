@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.4.0...v0.5.0) (2026-04-23)
+
+
+### Features
+
+* Update release workflow permissions and npm publish command ([7442c78](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/commit/7442c781329f19fbb4e84598f592293bd6fa7b07))
+
 ## [0.4.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.3.0...v0.4.0) (2026-04-23)
 
 
