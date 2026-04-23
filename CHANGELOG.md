@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.7.0...v0.8.0) (2026-04-23)
+
+
+### Features
+
+* Switch release workflow to use Bun for install, build, and test ([db24093](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/commit/db24093683b610dee39665251a0ccbaf704d41f0))
+
 ## [0.7.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.6.0...v0.7.0) (2026-04-23)
 
 
