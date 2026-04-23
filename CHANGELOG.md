@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.8.0...v0.9.0) (2026-04-23)
+
+
+### Features
+
+* added config for releases ([b5ebc0d](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/commit/b5ebc0d3cb7fc8b161d83d85c7bc96c297dcd4aa))
+
 ## [0.8.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.7.0...v0.8.0) (2026-04-23)
 
 
