@@ -220,8 +220,7 @@ Here's an `opencode.json` with every plugin option set and explained:
 
       "account": "work",
       // Optional. Openclaw account name.
-      // Only needed if you have multiple Openclaw accounts
-      // and want to send from a specific one.
+      // Only needed if you have multiple Openclaw accounts and want to send from a specific one.
       // Omit this if you only have one account.
 
       "debounceMs": 3000,
