@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.2.0...v0.3.0) (2026-04-23)
+
+
+### Features
+
+* Add comments explaining debounce and reply timeout values ([b4c8743](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/commit/b4c87436a7f6a561abe60e0be7b55d3ab3ec7aa9))
+
 ## [0.2.0](https://github.com/Onyelaudochukwuka/opencode-notify-openclaw/compare/v0.1.6...v0.2.0) (2026-04-23)
 
 
