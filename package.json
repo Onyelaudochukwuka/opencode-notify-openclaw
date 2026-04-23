@@ -1,6 +1,6 @@
 {
   "name": "opencode-notify-openclaw",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "OpenCode plugin that sends notifications via Openclaw to any messaging channel",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
