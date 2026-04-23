@@ -52,5 +52,6 @@ jobs:
         run: bun test
 
       - name: Publish
-        # if monorepo: add working-directory here too
-        run: npm publish --access public
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # still needed unless using pure OIDC
